@@ -67,3 +67,18 @@ def test_resolve_output_path_mirrors_folder_structure(tmp_path):
     out_dir = tmp_path / "out"
     out = resolve_output_path(f, base, str(out_dir), ".ocr", in_place=False)
     assert out == out_dir / "sub" / "a.pdf"
+
+
+def test_process_file_dispatches_by_extension(tmp_path, monkeypatch):
+    import pidocr.pipeline as pipeline
+
+    calls = []
+    monkeypatch.setattr(pipeline, "process_pdf", lambda *a, **k: calls.append("pdf"))
+    monkeypatch.setattr(pipeline, "process_image", lambda *a, **k: calls.append("image"))
+
+    pdf_path = tmp_path / "a.pdf"
+    img_path = tmp_path / "a.png"
+    pipeline.process_file(object(), pdf_path, tmp_path / "out.pdf", None)
+    pipeline.process_file(object(), img_path, tmp_path / "out2.pdf", None)
+
+    assert calls == ["pdf", "image"]

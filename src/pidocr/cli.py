@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 import logging
+import os
 from pathlib import Path
 
 from pidocr import __version__
@@ -17,6 +18,7 @@ from pidocr.pipeline import (
     process_file,
     resolve_output_path,
 )
+from pidocr.runner import run_parallel
 
 log = logging.getLogger("pidocr")
 
@@ -41,6 +43,7 @@ def build_arg_parser() -> argparse.ArgumentParser:
             "  pidocr big_folder/ -r --dry-run\n"
             "  pidocr file.pdf --in-place --force\n"
             "  pidocr drawing.pdf --dpi 400 --min-confidence 0.6 -v\n"
+            "  pidocr big_folder/ -r -o out/ -j 4       # 4 files in parallel\n"
         ),
     )
 
@@ -107,6 +110,19 @@ def build_arg_parser() -> argparse.ArgumentParser:
         "--skip-existing",
         action="store_true",
         help="Skip inputs whose output file already exists (instead of erroring or overwriting).",
+    )
+    parser.add_argument(
+        "-j",
+        "--jobs",
+        type=int,
+        default=1,
+        metavar="N",
+        help=(
+            "Process N files in parallel using separate worker processes "
+            "(each loads its own OCR engine, reused across the files it "
+            "picks up). Default: 1 (sequential). Pages within one file are "
+            "always OCR'd sequentially; parallelism is across files."
+        ),
     )
 
     ocr_group = parser.add_argument_group("OCR options")
@@ -180,6 +196,18 @@ def main(argv: list[str] | None = None) -> int:
     if args.in_place and not args.force:
         parser.error("--in-place requires --force (it overwrites your input files).")
 
+    if args.jobs < 1:
+        parser.error("--jobs must be >= 1.")
+    if args.jobs > 1 and args.gpu:
+        log.warning(
+            "--jobs %d with --gpu: multiple worker processes will share the same GPU, "
+            "which can contend for memory rather than speed things up. "
+            "Consider --jobs 1 with --gpu, or --jobs N without --gpu.",
+            args.jobs,
+        )
+
+    jobs_requested = args.jobs
+
     exts = ALL_EXTS
     if args.formats:
         exts = {("." + e.strip().lstrip(".")).lower() for e in args.formats.split(",") if e.strip()}
@@ -230,21 +258,47 @@ def main(argv: list[str] | None = None) -> int:
         log.error("Nothing to do.")
         return 1
 
-    engine = get_ocr_engine(cfg)
+    effective_jobs = min(jobs_requested, len(filtered_jobs))
+    cpu_count = os.cpu_count() or 1
+    if effective_jobs > cpu_count:
+        log.info(
+            "Requesting %d worker(s) on a machine with %d detected CPU core(s); "
+            "proceeding, but returns may diminish past core count.",
+            effective_jobs,
+            cpu_count,
+        )
 
-    results: list[FileResult] = []
-    for idx, (in_file, out_file) in enumerate(filtered_jobs, 1):
-        print(f"[{idx}/{len(filtered_jobs)}] {in_file}")
-        try:
-            res = process_file(engine, in_file, out_file, cfg)
-            results.append(res)
-            print(
-                f"    -> {out_file}  ({res.pages_processed} page(s), "
-                f"{res.lines_added} line(s), {res.elapsed:.1f}s)"
-            )
-        except Exception as e:
-            log.error("  FAILED: %s -> %s", in_file, e)
-            results.append(FileResult(input_path=in_file, ok=False, error=str(e)))
+    if effective_jobs > 1:
+        print(f"Running with {effective_jobs} parallel worker(s) (results print as they complete)...\n")
+
+        def _progress(done: int, total: int, in_file: Path, res: FileResult) -> None:
+            if res.ok:
+                print(
+                    f"[{done}/{total}] {in_file} -> {res.output_path}  "
+                    f"({res.pages_processed} page(s), {res.lines_added} line(s), {res.elapsed:.1f}s)"
+                )
+            else:
+                log.error("[%d/%d] FAILED: %s -> %s", done, total, in_file, res.error)
+
+        results: list[FileResult] = run_parallel(
+            filtered_jobs, cfg, effective_jobs, log_level=level, progress_cb=_progress
+        )
+    else:
+        engine = get_ocr_engine(cfg)
+
+        results = []
+        for idx, (in_file, out_file) in enumerate(filtered_jobs, 1):
+            print(f"[{idx}/{len(filtered_jobs)}] {in_file}")
+            try:
+                res = process_file(engine, in_file, out_file, cfg)
+                results.append(res)
+                print(
+                    f"    -> {out_file}  ({res.pages_processed} page(s), "
+                    f"{res.lines_added} line(s), {res.elapsed:.1f}s)"
+                )
+            except Exception as e:
+                log.error("  FAILED: %s -> %s", in_file, e)
+                results.append(FileResult(input_path=in_file, ok=False, error=str(e)))
 
     ok = sum(1 for r in results if r.ok)
     failed = [r for r in results if not r.ok]

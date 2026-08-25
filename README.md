@@ -15,6 +15,7 @@ pidocr page.png page.tif -o out/          # images become searchable PDFs
 pidocr drawing.pdf --pages 1-5,9          # only OCR those pages
 pidocr big_folder/ -r --dry-run           # preview what would run
 pidocr file.pdf --in-place --force        # overwrite the input file
+pidocr big_folder/ -r -o out/ -j 4         # 4 files in parallel
 ```
 
 ## Why this exists
@@ -34,6 +35,24 @@ different coordinate system. pidocr fixes this by:
 
 That combination is what makes OCR placement correct on rotated
 engineering drawings as well as normal upright pages.
+
+## Parallelism
+
+`-j/--jobs N` runs N files at a time using separate **worker processes**,
+each with its own PaddleOCR engine instance that it reuses across every
+file it picks up (so the (slow) engine load only happens once per worker,
+not once per file). This is process-based, not thread-based, because
+PaddleOCR inference isn't safe to call concurrently from multiple threads
+on one engine, and OCR is CPU-bound anyway — threads wouldn't help.
+
+Pages within a single PDF are still OCR'd sequentially by whichever
+worker owns that file; the parallelism is across files in a batch, not
+across pages of one file. Progress prints in completion order (whichever
+worker finishes first), not input order.
+
+`--gpu` combined with `-j > 1` will have every worker process share the
+same GPU, which usually contends for memory rather than actually speeding
+things up — prefer `--gpu -j 1`, or drop `--gpu` and use `-j N` on CPU.
 
 ## Install
 
