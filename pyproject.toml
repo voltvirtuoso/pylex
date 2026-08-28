@@ -4,15 +4,16 @@ build-backend = "hatchling.build"
 
 [project]
 name = "pidocr"
-version = "1.0.0"
-description = "Add an invisible, searchable OCR text layer to PDFs and images — including correctly-placed OCR on rotated engineering drawings."
+# The release version is sourced from src/pidocr/__init__.py.
+dynamic = ["version"]
+description = "Fast, searchable OCR text layers for PDFs and images, with an accuracy-first tiled mode, a simple-image fast path, reliable batch progress, and correctly placed text on rotated engineering drawings."
 readme = "README.md"
 requires-python = ">=3.10"
 license = { text = "MIT" }
 authors = [
     { name = "Haroon" },
 ]
-keywords = ["ocr", "pdf", "paddleocr", "p&id", "engineering-drawings", "searchable-pdf"]
+keywords = ["ocr", "pdf", "paddleocr", "p&id", "engineering-drawings", "searchable-pdf", "batch-processing", "fast-ocr"]
 classifiers = [
     "Environment :: Console",
     "Intended Audience :: Science/Research",
@@ -35,15 +36,21 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-ocr = ["paddleocr>=2.7", "paddlepaddle>=2.6"]
+ocr = ["paddleocr>=3.0,<4", "paddlepaddle>=3.0,<4"]
+onnx = ["onnxruntime>=1.18"]
+openvino = ["onnxruntime-openvino>=1.24,<2"]
 dev = ["pytest>=7.0", "ruff>=0.4"]
 
 [project.urls]
 Homepage = "https://github.com/haroon/pidocr"
 Issues = "https://github.com/haroon/pidocr/issues"
+Changelog = "https://github.com/haroon/pidocr/blob/main/CHANGELOG.md"
 
 [project.scripts]
 pidocr = "pidocr.cli:main"
+
+[tool.hatch.version]
+path = "src/pidocr/__init__.py"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/pidocr"]

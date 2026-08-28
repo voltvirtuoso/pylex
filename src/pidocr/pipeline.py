@@ -2,10 +2,12 @@
 
 from __future__ import annotations
 
+import fnmatch
 import io
 import logging
 import os
 import time
+from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -31,10 +33,10 @@ try:
 except ImportError:  # pragma: no cover
     Image = None
 
-from pidocr.config import ALL_EXTS, PDF_EXTS, Config
-from pidocr.engine import ocr_image
+from pidocr.config import PDF_EXTS, Config
 from pidocr.geometry import get_page_rotation, render_pdf_page_for_ocr
 from pidocr.overlay import build_invisible_text_overlay
+from pidocr.tiling import ocr_image_tiled
 
 log = logging.getLogger("pidocr")
 
@@ -99,7 +101,18 @@ class FileResult:
 # ======================================================================
 # PDF processing
 # ======================================================================
-def process_pdf(engine, input_path: Path, output_path: Path, cfg: Config) -> FileResult:
+def process_pdf(
+    engine,
+    input_path: Path,
+    output_path: Path,
+    cfg: Config,
+    on_page: Callable[[int, int], None] | None = None,
+    on_stage: Callable[[str], None] | None = None,
+) -> FileResult:
+    """on_page(page_num, n_pages), called after each page (processed or
+    skipped via --pages), lets a caller show live per-page progress on a
+    large multi-page PDF without process_pdf itself doing any I/O/display.
+    """
     result = FileResult(input_path=input_path, output_path=output_path)
     t0 = time.time()
 
@@ -116,6 +129,8 @@ def process_pdf(engine, input_path: Path, output_path: Path, cfg: Config) -> Fil
         if not page_in_ranges(page_num, cfg.page_ranges):
             writer.add_page(page)
             log.debug("  Page %d/%d: skipped (outside --pages)", page_num, n_pages)
+            if on_page:
+                on_page(page_num, n_pages)
             continue
 
         original_rotation = get_page_rotation(page)
@@ -129,13 +144,20 @@ def process_pdf(engine, input_path: Path, output_path: Path, cfg: Config) -> Fil
         )
 
         pdfium_page = pdfium_doc[i]
+        if on_stage:
+            on_stage(f"Rendering page {page_num}/{n_pages}")
         img_array, img_size_px = render_pdf_page_for_ocr(pdfium_page, original_rotation, cfg.dpi)
 
+        if on_stage:
+            on_stage(f"OCR page {page_num}/{n_pages}")
         try:
-            items = ocr_image(engine, img_array, cfg)
-        except Exception as e:
+            items = ocr_image_tiled(engine, img_array, cfg)
+        except Exception as e:  # noqa: BLE001 - preserve the page on OCR backend failures
             log.warning("  Page %d: OCR failed (%s), keeping page unchanged", page_num, e)
             items = []
+
+        if on_stage:
+            on_stage(f"Building page {page_num}/{n_pages}")
 
         # Transfer /Rotate into page content so PDF-content coordinates match
         # the OCR image's orientation. This is what fixes 90/180/270 pages.
@@ -176,6 +198,9 @@ def process_pdf(engine, input_path: Path, output_path: Path, cfg: Config) -> Fil
         result.pages_processed += 1
         writer.add_page(page)
 
+        if on_page:
+            on_page(page_num, n_pages)
+
     if reader.metadata:
         writer.add_metadata(reader.metadata)
 
@@ -195,7 +220,15 @@ def process_pdf(engine, input_path: Path, output_path: Path, cfg: Config) -> Fil
 # ======================================================================
 # Image processing (image -> single-page searchable PDF)
 # ======================================================================
-def process_image(engine, input_path: Path, output_path: Path, cfg: Config) -> FileResult:
+def process_image(
+    engine,
+    input_path: Path,
+    output_path: Path,
+    cfg: Config,
+    on_stage: Callable[[str], None] | None = None,
+    on_tile: Callable[[int, int], None] | None = None,
+    on_tile_done: Callable[[int, int], None] | None = None,
+) -> FileResult:
     result = FileResult(input_path=input_path, output_path=output_path)
     t0 = time.time()
 
@@ -203,11 +236,22 @@ def process_image(engine, input_path: Path, output_path: Path, cfg: Config) -> F
     img_array = np.array(pil_img)
     img_w_px, img_h_px = pil_img.size
 
+    if on_stage:
+        on_stage("Running OCR")
     try:
-        items = ocr_image(engine, img_array, cfg)
-    except Exception as e:
+        items = ocr_image_tiled(
+            engine,
+            img_array,
+            cfg,
+            on_tile=on_tile,
+            on_tile_done=on_tile_done,
+        )
+    except Exception as e:  # noqa: BLE001 - produce an output even when OCR fails
         log.warning("  OCR failed (%s), producing an unsearchable page", e)
         items = []
+
+    if on_stage:
+        on_stage("Building searchable PDF")
 
     # The page is sized in points from the image's pixel size at --image-dpi,
     # exactly like tesseract's own image-to-pdf convention.
@@ -260,29 +304,77 @@ def process_image(engine, input_path: Path, output_path: Path, cfg: Config) -> F
     return result
 
 
-def process_file(engine, input_path: Path, output_path: Path, cfg: Config) -> FileResult:
+def process_file(
+    engine,
+    input_path: Path,
+    output_path: Path,
+    cfg: Config,
+    on_page: Callable[[int, int], None] | None = None,
+    on_stage: Callable[[str], None] | None = None,
+    on_tile: Callable[[int, int], None] | None = None,
+    on_tile_done: Callable[[int, int], None] | None = None,
+) -> FileResult:
     """Dispatch to process_pdf or process_image based on the input's extension."""
     if input_path.suffix.lower() in PDF_EXTS:
-        return process_pdf(engine, input_path, output_path, cfg)
-    return process_image(engine, input_path, output_path, cfg)
+        return process_pdf(engine, input_path, output_path, cfg, on_page=on_page, on_stage=on_stage)
+    return process_image(
+        engine,
+        input_path,
+        output_path,
+        cfg,
+        on_stage=on_stage,
+        on_tile=on_tile,
+        on_tile_done=on_tile_done,
+    )
 
 
 # ======================================================================
 # File discovery & output-path resolution
 # ======================================================================
-def discover_inputs(paths: list[str], recursive: bool, exts: set[str]) -> list[Path]:
+def matches_any_pattern(path: Path, base: Path | None, patterns: list[str]) -> bool:
+    """Glob/wildcard match (fnmatch semantics: '*' matches any characters,
+    including path separators, so 'backup/*' and '*_draft*' both work as
+    expected) against the file's name and its path relative to `base`
+    (falling back to the path as given when there's no common base)."""
+    if not patterns:
+        return False
+    name = path.name
+    rel = path.relative_to(base).as_posix() if base is not None else path.as_posix()
+    as_given = str(path)
+    return any(
+        fnmatch.fnmatch(name, pat) or fnmatch.fnmatch(rel, pat) or fnmatch.fnmatch(as_given, pat)
+        for pat in patterns
+    )
+
+
+def discover_inputs(
+    paths: list[str],
+    recursive: bool,
+    exts: set[str],
+    exclude_patterns: list[str] | None = None,
+) -> list[Path]:
+    exclude_patterns = exclude_patterns or []
     found: list[Path] = []
+
     for raw in paths:
         p = Path(raw)
         if p.is_file():
+            if matches_any_pattern(p, None, exclude_patterns):
+                log.debug("Excluding (matches -xf pattern): %s", p)
+                continue
             found.append(p)
         elif p.is_dir():
             walker = p.rglob("*") if recursive else p.glob("*")
             for child in sorted(walker):
-                if child.is_file() and child.suffix.lower() in exts:
-                    found.append(child)
+                if not (child.is_file() and child.suffix.lower() in exts):
+                    continue
+                if matches_any_pattern(child, p, exclude_patterns):
+                    log.debug("Excluding (matches -xf pattern): %s", child)
+                    continue
+                found.append(child)
         else:
             log.error("Input path does not exist: %s", raw)
+
     return found
 
 

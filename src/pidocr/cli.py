@@ -5,11 +5,12 @@ from __future__ import annotations
 import argparse
 import logging
 import os
+import time
 from pathlib import Path
 
 from pidocr import __version__
 from pidocr.config import ALL_EXTS, Config
-from pidocr.engine import get_ocr_engine
+from pidocr.engine import configure_cpu_threads, get_ocr_engine
 from pidocr.pipeline import (
     FileResult,
     check_dependencies,
@@ -18,6 +19,7 @@ from pidocr.pipeline import (
     process_file,
     resolve_output_path,
 )
+from pidocr.progress import ProgressBar
 from pidocr.runner import run_parallel
 
 log = logging.getLogger("pidocr")
@@ -44,6 +46,10 @@ def build_arg_parser() -> argparse.ArgumentParser:
             "  pidocr file.pdf --in-place --force\n"
             "  pidocr drawing.pdf --dpi 400 --min-confidence 0.6 -v\n"
             "  pidocr big_folder/ -r -o out/ -j 4       # 4 files in parallel\n"
+            "  pidocr dense_pid.pdf --tile-size 1200 --tile-overlap 250\n"
+            "                                            # more text in crowded symbol clusters\n"
+            "  pidocr scans/ -r -xf '*_draft*' -xf 'backup/*'\n"
+            "                                            # exclude by wildcard pattern\n"
         ),
     )
 
@@ -96,6 +102,21 @@ def build_arg_parser() -> argparse.ArgumentParser:
         ),
     )
     parser.add_argument(
+        "-xf",
+        "--exclude",
+        action="append",
+        default=None,
+        metavar="PATTERN",
+        help=(
+            "Exclude files matching this glob/wildcard pattern (fnmatch rules: '*' matches "
+            "anything, including path separators, so 'backup/*' and '*_draft*' both work). "
+            "Use wildcards around a token when matching part of a filename, e.g. '*_OCR*'. "
+            "Matched against the filename and the path relative to the input folder. Repeat "
+            "-xf for multiple patterns, or comma-separate several within one, e.g. "
+            "-xf '*.tmp,*_old*,archive/*'."
+        ),
+    )
+    parser.add_argument(
         "--pages",
         metavar="RANGE",
         default=None,
@@ -132,6 +153,44 @@ def build_arg_parser() -> argparse.ArgumentParser:
     )
     ocr_group.add_argument("--lang", default="en", help="PaddleOCR language code (default: en).")
     ocr_group.add_argument(
+        "--ocr-version",
+        choices=("PP-OCRv4", "PP-OCRv5", "PP-OCRv6"),
+        default="PP-OCRv6",
+        help="PaddleOCR model generation (default: PP-OCRv6).",
+    )
+    ocr_group.add_argument(
+        "--model-size",
+        choices=("tiny", "small", "medium"),
+        default="medium",
+        help="PP-OCRv6 model tier (default: medium; small balances speed, tiny favors latency).",
+    )
+    ocr_group.add_argument(
+        "--inference-engine",
+        choices=("auto", "paddle_static", "paddle_dynamic", "onnxruntime", "openvino"),
+        default="auto",
+        help=(
+            "Runtime engine (default: auto; uses OpenVINO when available, then "
+            "ONNX Runtime, otherwise dynamic Paddle)."
+        ),
+    )
+    ocr_group.add_argument(
+        "--runtime-cache-dir",
+        default=None,
+        metavar="PATH",
+        help="Persistent OpenVINO/ONNX Runtime compiled-engine cache directory (default: platform cache).",
+    )
+    ocr_group.add_argument(
+        "--enable-hpi",
+        action="store_true",
+        help="Enable PaddleOCR high-performance inference and its cached backend selection.",
+    )
+    ocr_group.add_argument(
+        "--hpi-backend",
+        choices=("auto", "paddle", "openvino", "onnxruntime"),
+        default=None,
+        help="Optional HPI backend; OpenVINO/ONNX require supported PaddleOCR 3.x deployment dependencies.",
+    )
+    ocr_group.add_argument(
         "--min-confidence", type=float, default=0.5, help="Minimum OCR confidence to keep a line (default: 0.5)."
     )
     ocr_group.add_argument(
@@ -141,6 +200,60 @@ def build_arg_parser() -> argparse.ArgumentParser:
     ocr_group.add_argument(
         "--no-textline-orientation", action="store_true", help="Disable per-textline orientation classification."
     )
+    ocr_group.add_argument(
+        "--no-vertical-text-retry",
+        action="store_true",
+        help="Disable targeted 90-degree retries for low-confidence vertical labels.",
+    )
+    ocr_group.add_argument(
+        "--strict-tiling",
+        action="store_true",
+        help="Always use configured overlapping tiles; disables the adaptive full-page optimization.",
+    )
+    ocr_group.add_argument(
+        "--fast",
+        action="store_true",
+        help=(
+            "Fast profile for simple images: one full-image pass, no text-line orientation model, "
+            "and a 3200 px detector cap. Use normal mode for dense drawings."
+        ),
+    )
+    ocr_group.add_argument(
+        "--enable-mkldnn",
+        action="store_true",
+        help="Enable oneDNN/MKLDNN for explicit static CPU inference; dynamic mode avoids static oneDNN compatibility issues.",
+    )
+    ocr_group.add_argument(
+        "--recognition-batch-size",
+        type=int,
+        default=6,
+        metavar="N",
+        help="Recognition batch size per image/tile (default: 6).",
+    )
+    ocr_group.add_argument(
+        "--orientation-batch-size",
+        type=int,
+        default=8,
+        metavar="N",
+        help="Text-line orientation batch size (default: 8).",
+    )
+    ocr_group.add_argument(
+        "--no-runtime-fallback",
+        action="store_true",
+        help="Fail instead of falling back if the selected Paddle runtime is unsupported.",
+    )
+    ocr_group.add_argument(
+        "--cpu-threads",
+        type=int,
+        default=None,
+        metavar="N",
+        help="Native CPU threads per process (default: auto-balanced across --jobs workers).",
+    )
+    ocr_group.add_argument(
+        "--retry-upscale",
+        action="store_true",
+        help="If a pass finds no text, retry once at 1.5x resolution to recover tiny/low-resolution labels.",
+    )
 
     overlay_group = parser.add_argument_group("Overlay tuning (advanced)")
     overlay_group.add_argument("--font", default="Helvetica", help="Invisible-layer font (default: Helvetica).")
@@ -149,6 +262,76 @@ def build_arg_parser() -> argparse.ArgumentParser:
         type=float,
         default=0.18,
         help="Perpendicular baseline offset as a fraction of box height (default: 0.18).",
+    )
+
+    dense_group = parser.add_argument_group(
+        "Dense-drawing tuning",
+        (
+            "A whole-page OCR pass resizes the entire page down before detecting text, so a tag "
+            "squeezed between several valve/instrument symbols can shrink below what the detector "
+            "picks up, even though the same text on open pipe run is fine. These flags recover it."
+        ),
+    )
+    dense_group.add_argument(
+        "--tile-size",
+        type=int,
+        default=2000,
+        metavar="PX",
+        help=(
+            "OCR the page in overlapping PX x PX windows at full resolution instead of one whole-"
+            "page pass (default: 2000). Lower it (e.g. 900-1200) for very crowded drawings. "
+            "0 disables tiling (same as --no-tile)."
+        ),
+    )
+    dense_group.add_argument(
+        "--tile-overlap",
+        type=int,
+        default=220,
+        metavar="PX",
+        help="Overlap between adjacent tiles in pixels, so text near a tile edge isn't cut in half (default: 220).",
+    )
+    dense_group.add_argument(
+        "--no-tile",
+        action="store_true",
+        help="Disable tiling; OCR each page in a single whole-page pass (equivalent to --tile-size 0).",
+    )
+    dense_group.add_argument(
+        "--dedupe-tol-px",
+        type=float,
+        default=20.0,
+        metavar="PX",
+        help=(
+            "When tiling, two detections with identical text whose centers land within this many "
+            "page-pixels of each other are treated as the same duplicate from tile overlap and merged "
+            "(default: 20)."
+        ),
+    )
+    dense_group.add_argument(
+        "--det-thresh",
+        type=float,
+        default=None,
+        metavar="F",
+        help="PaddleOCR text_det_thresh override (detector pixel-score cutoff). Leave unset to use PaddleOCR's default.",
+    )
+    dense_group.add_argument(
+        "--det-box-thresh",
+        type=float,
+        default=None,
+        metavar="F",
+        help=(
+            "PaddleOCR text_det_box_thresh override. Lowering this (e.g. 0.4-0.5) recovers weaker "
+            "detections in crowded symbol clusters, at some risk of more false positives."
+        ),
+    )
+    dense_group.add_argument(
+        "--det-unclip-ratio",
+        type=float,
+        default=None,
+        metavar="F",
+        help=(
+            "PaddleOCR text_det_unclip_ratio override. Raising this (e.g. 1.8-2.2) expands detected "
+            "boxes, helping recover text that's touching or squeezed against line-art."
+        ),
     )
 
     parser.add_argument("-v", "--verbose", action="count", default=0, help="Increase log verbosity (-v info, -vv debug).")
@@ -164,11 +347,32 @@ def config_from_args(args: argparse.Namespace) -> Config:
         image_dpi=args.image_dpi,
         min_confidence=args.min_confidence,
         lang=args.lang,
+        ocr_version=args.ocr_version,
+        model_size=args.model_size,
+        inference_engine=args.inference_engine,
+        enable_hpi=args.enable_hpi,
+        hpi_backend=args.hpi_backend,
+        runtime_cache_dir=args.runtime_cache_dir,
         font=args.font,
-        det_limit_side_len=args.det_limit_side_len,
+        det_limit_side_len=min(args.det_limit_side_len, 3200) if args.fast else args.det_limit_side_len,
         baseline_fraction=args.baseline_fraction,
-        use_textline_orientation=not args.no_textline_orientation,
+        use_textline_orientation=not args.no_textline_orientation and not args.fast,
+        vertical_text_retry=not args.no_vertical_text_retry and not args.fast,
         use_gpu=args.gpu,
+        disable_mkldnn=not args.enable_mkldnn,
+        cpu_threads=args.cpu_threads,
+        orientation_batch_size=args.orientation_batch_size,
+        recognition_batch_size=args.recognition_batch_size,
+        allow_runtime_fallback=not args.no_runtime_fallback,
+        fast_mode=args.fast,
+        retry_upscale=args.retry_upscale,
+        tile_size=0 if args.no_tile or args.fast else args.tile_size,
+        tile_overlap=args.tile_overlap,
+        adaptive_tiling=not args.strict_tiling,
+        dedupe_tol_px=args.dedupe_tol_px,
+        det_thresh=args.det_thresh,
+        det_box_thresh=args.det_box_thresh,
+        det_unclip_ratio=args.det_unclip_ratio,
     )
     if args.pages:
         try:
@@ -198,6 +402,10 @@ def main(argv: list[str] | None = None) -> int:
 
     if args.jobs < 1:
         parser.error("--jobs must be >= 1.")
+    if args.enable_hpi and args.inference_engine != "auto":
+        parser.error("--enable-hpi and --inference-engine are mutually exclusive; use --inference-engine auto.")
+    if args.hpi_backend and not args.enable_hpi:
+        parser.error("--hpi-backend requires --enable-hpi.")
     if args.jobs > 1 and args.gpu:
         log.warning(
             "--jobs %d with --gpu: multiple worker processes will share the same GPU, "
@@ -205,6 +413,12 @@ def main(argv: list[str] | None = None) -> int:
             "Consider --jobs 1 with --gpu, or --jobs N without --gpu.",
             args.jobs,
         )
+    if args.tile_size < 0:
+        parser.error("--tile-size must be >= 0 (0 disables tiling).")
+    if args.tile_overlap < 0:
+        parser.error("--tile-overlap must be >= 0.")
+    if args.tile_size > 0 and args.tile_overlap >= args.tile_size:
+        parser.error("--tile-overlap must be smaller than --tile-size.")
 
     jobs_requested = args.jobs
 
@@ -212,9 +426,16 @@ def main(argv: list[str] | None = None) -> int:
     if args.formats:
         exts = {("." + e.strip().lstrip(".")).lower() for e in args.formats.split(",") if e.strip()}
 
-    input_files = discover_inputs(args.inputs, args.recursive, exts)
+    exclude_patterns: list[str] = []
+    for raw in args.exclude or []:
+        exclude_patterns.extend(p.strip() for p in raw.split(",") if p.strip())
+
+    input_files = discover_inputs(args.inputs, args.recursive, exts, exclude_patterns)
     if not input_files:
-        log.error("No matching input files found.")
+        if exclude_patterns:
+            log.error("No matching input files found (check your -xf patterns aren't excluding everything).")
+        else:
+            log.error("No matching input files found.")
         return 1
 
     # base_input: if the user passed exactly one directory, mirror structure
@@ -235,6 +456,8 @@ def main(argv: list[str] | None = None) -> int:
         print(f"{len(jobs)} file(s) would be processed:\n")
         for in_file, out_file in jobs:
             print(f"  {in_file}  ->  {out_file}")
+        if exclude_patterns:
+            print(f"\n(excluding files matching: {', '.join(exclude_patterns)})")
         return 0
 
     cfg = config_from_args(args)
@@ -260,6 +483,10 @@ def main(argv: list[str] | None = None) -> int:
 
     effective_jobs = min(jobs_requested, len(filtered_jobs))
     cpu_count = os.cpu_count() or 1
+    if cfg.cpu_threads is None:
+        cfg.cpu_threads = max(1, cpu_count // effective_jobs)
+    elif cfg.cpu_threads < 1:
+        parser.error("--cpu-threads must be >= 1.")
     if effective_jobs > cpu_count:
         log.info(
             "Requesting %d worker(s) on a machine with %d detected CPU core(s); "
@@ -269,45 +496,111 @@ def main(argv: list[str] | None = None) -> int:
         )
 
     if effective_jobs > 1:
-        print(f"Running with {effective_jobs} parallel worker(s) (results print as they complete)...\n")
+        bar = ProgressBar(len(filtered_jobs), label="OCR", enabled=not args.quiet)
+        bar.println(
+            f"Running with {effective_jobs} parallel worker(s) "
+            "(each worker loads its own OCR engine; startup may take a while)..."
+        )
+        bar.start_spinner(f"Loading OCR engine in {effective_jobs} worker(s)")
 
         def _progress(done: int, total: int, in_file: Path, res: FileResult) -> None:
             if res.ok:
-                print(
+                bar.println(
                     f"[{done}/{total}] {in_file} -> {res.output_path}  "
                     f"({res.pages_processed} page(s), {res.lines_added} line(s), {res.elapsed:.1f}s)"
                 )
             else:
                 log.error("[%d/%d] FAILED: %s -> %s", done, total, in_file, res.error)
+            bar.update(1)
 
-        results: list[FileResult] = run_parallel(
-            filtered_jobs, cfg, effective_jobs, log_level=level, progress_cb=_progress
-        )
+        try:
+            results: list[FileResult] = run_parallel(
+                filtered_jobs, cfg, effective_jobs, log_level=level, progress_cb=_progress
+            )
+        finally:
+            bar.stop_spinner()
+            bar.close()
     else:
-        engine = get_ocr_engine(cfg)
+        configure_cpu_threads(cfg.cpu_threads)
+        bar = ProgressBar(len(filtered_jobs), label="OCR", enabled=not args.quiet)
+        bar.start_spinner(
+            f"Loading {cfg.ocr_version} {cfg.model_size} model ({cfg.inference_engine})"
+        )
+        engine_started = time.perf_counter()
+        try:
+            engine = get_ocr_engine(cfg)
+        finally:
+            bar.stop_spinner()
+        bar.println(f"OCR engine ready in {time.perf_counter() - engine_started:.1f}s")
 
         results = []
         for idx, (in_file, out_file) in enumerate(filtered_jobs, 1):
-            print(f"[{idx}/{len(filtered_jobs)}] {in_file}")
+            bar.println(f"[{idx}/{len(filtered_jobs)}] {in_file}")
+
+            file_base = idx - 1
+
+            def _on_page(page_num: int, n_pages: int, _in_file=in_file, _base=file_base) -> None:
+                bar.stop_spinner()
+                page_fraction = page_num / max(n_pages, 1)
+                bar.set_progress(
+                    _base + page_fraction,
+                    suffix=f"{_in_file.name} (page {page_num}/{n_pages})",
+                )
+
+            def _on_stage(stage: str, _in_file=in_file, _base=file_base) -> None:
+                # Numeric progress is only advanced at truthful checkpoints.
+                # Paddle's predict() call is monolithic, so animate activity
+                # during that blocking interval instead of inventing progress.
+                bar.stop_spinner()
+                if not stage.startswith("Building"):
+                    bar.set_progress(_base + 0.05)
+                bar.start_spinner(f"{_in_file.name}: {stage}")
+
+            def _on_tile(tile_number: int, n_tiles: int, _in_file=in_file, _base=file_base) -> None:
+                tile_fraction = 0.1 + 0.85 * ((tile_number - 0.5) / max(n_tiles, 1))
+                bar.stop_spinner()
+                bar.set_progress(_base + tile_fraction)
+                bar.start_spinner(f"{_in_file.name}: OCR tile {tile_number}/{n_tiles}")
+
+            def _on_tile_done(tile_number: int, n_tiles: int, _base=file_base) -> None:
+                completed_fraction = 0.1 + 0.85 * (tile_number / max(n_tiles, 1))
+                bar.stop_spinner()
+                bar.set_progress(_base + completed_fraction)
+
             try:
-                res = process_file(engine, in_file, out_file, cfg)
+                res = process_file(
+                    engine,
+                    in_file,
+                    out_file,
+                    cfg,
+                    on_page=_on_page,
+                    on_stage=_on_stage,
+                    on_tile=_on_tile,
+                    on_tile_done=_on_tile_done,
+                )
                 results.append(res)
-                print(
+                bar.println(
                     f"    -> {out_file}  ({res.pages_processed} page(s), "
                     f"{res.lines_added} line(s), {res.elapsed:.1f}s)"
                 )
-            except Exception as e:
+            except Exception as e:  # noqa: BLE001 - keep processing the remaining batch files
                 log.error("  FAILED: %s -> %s", in_file, e)
                 results.append(FileResult(input_path=in_file, ok=False, error=str(e)))
+
+            bar.update(1)
+
+        bar.close()
 
     ok = sum(1 for r in results if r.ok)
     failed = [r for r in results if not r.ok]
 
-    print(f"\nDone: {ok}/{len(results)} succeeded.")
+    if not args.quiet:
+        print(f"\nDone: {ok}/{len(results)} succeeded.")
     if failed:
-        print(f"{len(failed)} file(s) failed:")
+        if not args.quiet:
+            print(f"{len(failed)} file(s) failed:")
         for r in failed:
-            print(f"  - {r.input_path}: {r.error}")
+            log.error("  - %s: %s", r.input_path, r.error)
         return 1
 
     return 0

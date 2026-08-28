@@ -38,7 +38,7 @@ def test_order_quad_axis_aligned():
 
 def test_polygon_geometry_axis_aligned():
     poly = np.array([[10, 10], [110, 10], [110, 40], [10, 40]], dtype=float)
-    center, direction, w, h, angle = polygon_geometry(poly)
+    _center, _direction, w, h, angle = polygon_geometry(poly)
     assert w == pytest.approx(100.0, abs=1.0)
     assert h == pytest.approx(30.0, abs=1.0)
     assert angle == pytest.approx(0.0, abs=1.0)
@@ -69,8 +69,80 @@ def test_resolve_output_path_mirrors_folder_structure(tmp_path):
     assert out == out_dir / "sub" / "a.pdf"
 
 
+# ----------------------------------------------------------------------
+# exclude patterns (-xf)
+# ----------------------------------------------------------------------
+def test_matches_any_pattern_by_basename():
+    from pidocr.pipeline import matches_any_pattern
+
+    p = Path("/some/dir/draft_v2.pdf")
+    assert matches_any_pattern(p, None, ["*draft*"])
+    assert not matches_any_pattern(p, None, ["*final*"])
+
+
+def test_matches_any_pattern_by_relative_path():
+    from pidocr.pipeline import matches_any_pattern
+
+    base = Path("/scans")
+    p = Path("/scans/backup/old.pdf")
+    assert matches_any_pattern(p, base, ["backup/*"])
+    assert not matches_any_pattern(p, base, ["archive/*"])
+
+
+def test_matches_any_pattern_requires_wildcards_for_partial_name_matches():
+    from pidocr.pipeline import matches_any_pattern
+
+    base = Path("/scans")
+    p = Path("/scans/10020-01-PID-002_OCR.pdf")
+    assert not matches_any_pattern(p, base, ["_OCR"])
+    assert matches_any_pattern(p, base, ["*_OCR*"])
+
+
+def test_matches_any_pattern_no_patterns_never_matches():
+    from pidocr.pipeline import matches_any_pattern
+
+    assert not matches_any_pattern(Path("anything.pdf"), None, [])
+
+
+def test_discover_inputs_applies_exclude_patterns(tmp_path):
+    from pidocr.pipeline import discover_inputs
+
+    (tmp_path / "keep.pdf").touch()
+    (tmp_path / "draft_v1.pdf").touch()
+    backup_dir = tmp_path / "backup"
+    backup_dir.mkdir()
+    (backup_dir / "old.pdf").touch()
+
+    found = discover_inputs([str(tmp_path)], recursive=True, exts={".pdf"}, exclude_patterns=["draft_*", "backup/*"])
+    names = sorted(p.name for p in found)
+    assert names == ["keep.pdf"]
+
+
+def test_discover_inputs_no_exclude_finds_everything(tmp_path):
+    from pidocr.pipeline import discover_inputs
+
+    (tmp_path / "a.pdf").touch()
+    (tmp_path / "b.pdf").touch()
+
+    found = discover_inputs([str(tmp_path)], recursive=False, exts={".pdf"})
+    assert sorted(p.name for p in found) == ["a.pdf", "b.pdf"]
+
+
+def test_discover_inputs_plain_token_skips_existing_ocr_outputs(tmp_path):
+    from pidocr.pipeline import discover_inputs
+
+    (tmp_path / "drawing.pdf").touch()
+    (tmp_path / "drawing_OCR.pdf").touch()
+    (tmp_path / "drawing_OCR_OCR.pdf").touch()
+
+    found = discover_inputs(
+        [str(tmp_path)], recursive=False, exts={".pdf"}, exclude_patterns=["*_OCR*"]
+    )
+    assert [p.name for p in found] == ["drawing.pdf"]
+
+
 def test_process_file_dispatches_by_extension(tmp_path, monkeypatch):
-    import pidocr.pipeline as pipeline
+    from pidocr import pipeline
 
     calls = []
     monkeypatch.setattr(pipeline, "process_pdf", lambda *a, **k: calls.append("pdf"))

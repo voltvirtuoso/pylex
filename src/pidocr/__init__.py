@@ -10,6 +10,6 @@ drawings (/Rotate = 90 / 180 / 270) as well as normal upright pages.
 from pidocr.config import Config
 from pidocr.pipeline import FileResult, process_image, process_pdf
 
-__version__ = "1.0.0"
+__version__ = "1.5.10"
 
-__all__ = ["Config", "FileResult", "process_pdf", "process_image", "__version__"]
+__all__ = ["Config", "FileResult", "__version__", "process_image", "process_pdf"]

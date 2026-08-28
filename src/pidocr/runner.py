@@ -22,7 +22,7 @@ from concurrent.futures import ProcessPoolExecutor, as_completed
 from pathlib import Path
 
 from pidocr.config import Config
-from pidocr.engine import get_ocr_engine
+from pidocr.engine import configure_cpu_threads, get_ocr_engine
 from pidocr.pipeline import FileResult, process_file
 
 log = logging.getLogger("pidocr")
@@ -37,6 +37,7 @@ def _init_worker(cfg: Config, log_level: int) -> None:
     global _WORKER_CFG
     _WORKER_CFG = cfg
     logging.basicConfig(level=log_level, format="%(message)s")
+    configure_cpu_threads(cfg.cpu_threads)
     get_ocr_engine(cfg)  # load + cache in this process now, not on first file
 
 
@@ -46,7 +47,7 @@ def _run_one(in_file: Path, out_file: Path) -> FileResult:
     try:
         engine = get_ocr_engine(_WORKER_CFG)
         return process_file(engine, in_file, out_file, _WORKER_CFG)
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001 - keep batch processing alive
         return FileResult(
             input_path=in_file,
             output_path=out_file,
@@ -81,17 +82,15 @@ def run_parallel(
             for idx, (in_file, out_file) in enumerate(jobs_list)
         }
 
-        done_count = 0
-        for future in as_completed(future_to_idx):
+        for done_count, future in enumerate(as_completed(future_to_idx), start=1):
             idx = future_to_idx[future]
             in_file, out_file = jobs_list[idx]
             try:
                 result = future.result()
-            except Exception as e:  # worker crashed outright
+            except Exception as e:  # noqa: BLE001 - worker crashed outright
                 result = FileResult(input_path=in_file, output_path=out_file, ok=False, error=str(e))
 
             results[idx] = result
-            done_count += 1
             if progress_cb:
                 progress_cb(done_count, len(jobs_list), in_file, result)
 
