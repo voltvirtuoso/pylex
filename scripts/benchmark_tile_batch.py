@@ -7,11 +7,10 @@ import numpy as np
 import pypdfium2 as pdfium
 from pypdf import PdfReader
 
-from pidocr.config import Config
-from pidocr.engine import get_ocr_engine, _parse_results
-from pidocr.pipeline import get_page_rotation, render_pdf_page_for_ocr
-from pidocr.tiling import compute_tiles
-
+from pylex.config import Config
+from pylex.engine import _parse_results, get_ocr_engine
+from pylex.pipeline import get_page_rotation, render_pdf_page_for_ocr
+from pylex.tiling import compute_tiles
 
 PDF = Path('/home/ubuntu/upload/10020-01-PID-005.pdf')
 

@@ -21,11 +21,11 @@ from collections.abc import Callable
 from concurrent.futures import ProcessPoolExecutor, as_completed
 from pathlib import Path
 
-from pidocr.config import Config
-from pidocr.engine import configure_cpu_threads, get_ocr_engine
-from pidocr.pipeline import FileResult, process_file
+from pylex.config import Config
+from pylex.engine import get_ocr_engine
+from pylex.pipeline import FileResult, process_file
 
-log = logging.getLogger("pidocr")
+log = logging.getLogger("pylex")
 
 # Set once per worker process by _init_worker; each worker process has its
 # own copy of module globals, so this is never shared across workers.
@@ -37,7 +37,6 @@ def _init_worker(cfg: Config, log_level: int) -> None:
     global _WORKER_CFG
     _WORKER_CFG = cfg
     logging.basicConfig(level=log_level, format="%(message)s")
-    configure_cpu_threads(cfg.cpu_threads)
     get_ocr_engine(cfg)  # load + cache in this process now, not on first file
 
 
@@ -47,7 +46,7 @@ def _run_one(in_file: Path, out_file: Path) -> FileResult:
     try:
         engine = get_ocr_engine(_WORKER_CFG)
         return process_file(engine, in_file, out_file, _WORKER_CFG)
-    except Exception as e:  # noqa: BLE001 - keep batch processing alive
+    except Exception as e:  # noqa: BLE001 - convert worker failures into file results
         return FileResult(
             input_path=in_file,
             output_path=out_file,
@@ -87,7 +86,7 @@ def run_parallel(
             in_file, out_file = jobs_list[idx]
             try:
                 result = future.result()
-            except Exception as e:  # noqa: BLE001 - worker crashed outright
+            except Exception as e:  # noqa: BLE001 - convert crashed workers into file results
                 result = FileResult(input_path=in_file, output_path=out_file, ok=False, error=str(e))
 
             results[idx] = result

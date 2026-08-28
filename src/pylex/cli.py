@@ -1,4 +1,4 @@
-"""Command-line interface: `pidocr <inputs...> [options]`."""
+"""Command-line interface: `pylex <inputs...> [options]`."""
 
 from __future__ import annotations
 
@@ -8,10 +8,10 @@ import os
 import time
 from pathlib import Path
 
-from pidocr import __version__
-from pidocr.config import ALL_EXTS, Config
-from pidocr.engine import configure_cpu_threads, get_ocr_engine
-from pidocr.pipeline import (
+from pylex import __version__
+from pylex.config import ALL_EXTS, Config
+from pylex.engine import configure_cpu_threads, get_ocr_engine
+from pylex.pipeline import (
     FileResult,
     check_dependencies,
     discover_inputs,
@@ -19,15 +19,15 @@ from pidocr.pipeline import (
     process_file,
     resolve_output_path,
 )
-from pidocr.progress import ProgressBar
-from pidocr.runner import run_parallel
+from pylex.progress import ProgressBar
+from pylex.runner import run_parallel
 
-log = logging.getLogger("pidocr")
+log = logging.getLogger("pylex")
 
 
 def build_arg_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
-        prog="pidocr",
+        prog="pylex",
         description=(
             "Add an invisible, searchable OCR text layer to PDFs and images "
             "(PaddleOCR-based). Handles rotated PDF pages (/Rotate 90/180/270) "
@@ -37,18 +37,18 @@ def build_arg_parser() -> argparse.ArgumentParser:
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog=(
             "examples:\n"
-            "  pidocr drawing.pdf\n"
-            "  pidocr drawing.pdf -o searchable.pdf\n"
-            "  pidocr scans/ -o out/ -r\n"
-            "  pidocr page.png page.tif -o out/\n"
-            "  pidocr drawing.pdf --pages 1-5,9\n"
-            "  pidocr big_folder/ -r --dry-run\n"
-            "  pidocr file.pdf --in-place --force\n"
-            "  pidocr drawing.pdf --dpi 400 --min-confidence 0.6 -v\n"
-            "  pidocr big_folder/ -r -o out/ -j 4       # 4 files in parallel\n"
-            "  pidocr dense_pid.pdf --tile-size 1200 --tile-overlap 250\n"
+            "  pylex drawing.pdf\n"
+            "  pylex drawing.pdf -o searchable.pdf\n"
+            "  pylex scans/ -o out/ -r\n"
+            "  pylex page.png page.tif -o out/\n"
+            "  pylex drawing.pdf --pages 1-5,9\n"
+            "  pylex big_folder/ -r --dry-run\n"
+            "  pylex file.pdf --in-place --force\n"
+            "  pylex drawing.pdf --dpi 400 --min-confidence 0.6 -v\n"
+            "  pylex big_folder/ -r -o out/ -j 4       # 4 files in parallel\n"
+            "  pylex dense_pid.pdf --tile-size 1200 --tile-overlap 250\n"
             "                                            # more text in crowded symbol clusters\n"
-            "  pidocr scans/ -r -xf '*_draft*' -xf 'backup/*'\n"
+            "  pylex scans/ -r -xf '*_draft*' -xf 'backup/*'\n"
             "                                            # exclude by wildcard pattern\n"
         ),
     )
@@ -378,7 +378,7 @@ def config_from_args(args: argparse.Namespace) -> Config:
         try:
             cfg.page_ranges = parse_page_ranges(args.pages)
         except ValueError as e:
-            raise SystemExit(f"pidocr: error: {e}") from e
+            raise SystemExit(f"pylex: error: {e}") from e
     return cfg
 
 

@@ -99,7 +99,7 @@ class ProgressBar:
                     self._suffix = f"{text} {_SPINNER_FRAMES[frame_index]}"
                     self._render()
 
-        thread = threading.Thread(target=_spin, name="pidocr-progress-spinner", daemon=True)
+        thread = threading.Thread(target=_spin, name="pylex-progress-spinner", daemon=True)
         with self._lock:
             self._spinner_thread = thread
         thread.start()

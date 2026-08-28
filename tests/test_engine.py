@@ -7,8 +7,8 @@ import numpy as np
 def test_paddle_backend_output_is_suppressed(monkeypatch, capfd):
     import sys
 
-    import pidocr.engine as engine_mod
-    from pidocr.config import Config
+    import pylex.engine as engine_mod
+    from pylex.config import Config
 
     class FakePaddleOCR:
         def __init__(self, **kwargs):
@@ -42,7 +42,7 @@ def test_paddle_backend_output_is_suppressed(monkeypatch, capfd):
 
 
 def test_backend_file_descriptor_output_is_suppressed(capfd):
-    import pidocr.engine as engine_mod
+    import pylex.engine as engine_mod
 
     with engine_mod._quiet_backend_output():
         os.write(1, b"backend child status\n")
@@ -54,8 +54,8 @@ def test_backend_file_descriptor_output_is_suppressed(capfd):
 
 
 def test_retry_upscale_runs_only_after_no_result_and_maps_coordinates(monkeypatch):
-    import pidocr.engine as engine_mod
-    from pidocr.config import Config
+    import pylex.engine as engine_mod
+    from pylex.config import Config
 
     calls = []
 
@@ -81,7 +81,7 @@ def test_retry_upscale_runs_only_after_no_result_and_maps_coordinates(monkeypatc
 
 
 def test_configure_cpu_threads_sets_common_pool_limits(monkeypatch):
-    import pidocr.engine as engine_mod
+    import pylex.engine as engine_mod
 
     for name in ("OMP_NUM_THREADS", "MKL_NUM_THREADS", "OPENBLAS_NUM_THREADS"):
         monkeypatch.delenv(name, raising=False)
@@ -95,8 +95,8 @@ def test_configure_cpu_threads_sets_common_pool_limits(monkeypatch):
 
 
 def test_paddle_runtime_defaults_use_current_model_and_automatic_runtime():
-    import pidocr.engine as engine_mod
-    from pidocr.config import Config
+    import pylex.engine as engine_mod
+    from pylex.config import Config
 
     kwargs = engine_mod._paddle_runtime_kwargs(Config())
 
@@ -110,8 +110,8 @@ def test_paddle_runtime_defaults_use_current_model_and_automatic_runtime():
 
 
 def test_hpi_backend_is_configured_without_explicit_engine():
-    import pidocr.engine as engine_mod
-    from pidocr.config import Config
+    import pylex.engine as engine_mod
+    from pylex.config import Config
 
     kwargs = engine_mod._paddle_runtime_kwargs(Config(enable_hpi=True, hpi_backend="openvino"))
 
@@ -122,8 +122,8 @@ def test_hpi_backend_is_configured_without_explicit_engine():
 
 
 def test_static_runtime_failure_retries_with_dynamic(monkeypatch):
-    import pidocr.engine as engine_mod
-    from pidocr.config import Config
+    import pylex.engine as engine_mod
+    from pylex.config import Config
 
     class StaticEngine:
         def predict(self, image, **kwargs):
@@ -155,8 +155,8 @@ def test_static_runtime_failure_retries_with_dynamic(monkeypatch):
 
 
 def test_cpu_threads_are_mapped_per_inference_engine():
-    import pidocr.engine as engine_mod
-    from pidocr.config import Config
+    import pylex.engine as engine_mod
+    from pylex.config import Config
 
     dynamic = engine_mod._paddle_runtime_kwargs(Config(cpu_threads=12))
     assert "cpu_threads" not in dynamic["engine_config"]
@@ -170,8 +170,8 @@ def test_cpu_threads_are_mapped_per_inference_engine():
 
 
 def test_auto_runtime_prefers_onnxruntime_when_openvino_is_unavailable(monkeypatch):
-    import pidocr.engine as engine_mod
-    from pidocr.config import Config
+    import pylex.engine as engine_mod
+    from pylex.config import Config
 
     monkeypatch.setattr(engine_mod.importlib.util, "find_spec", lambda name: object() if name == "onnxruntime" else None)
     monkeypatch.setattr(engine_mod, "_onnxruntime_has_openvino", lambda: False)
@@ -181,8 +181,8 @@ def test_auto_runtime_prefers_onnxruntime_when_openvino_is_unavailable(monkeypat
 
 
 def test_auto_runtime_falls_back_to_dynamic_paddle_when_onnxruntime_is_unavailable(monkeypatch):
-    import pidocr.engine as engine_mod
-    from pidocr.config import Config
+    import pylex.engine as engine_mod
+    from pylex.config import Config
 
     monkeypatch.setattr(engine_mod.importlib.util, "find_spec", lambda _name: None)
 
@@ -191,8 +191,8 @@ def test_auto_runtime_falls_back_to_dynamic_paddle_when_onnxruntime_is_unavailab
 
 
 def test_openvino_runtime_maps_to_onnxruntime_with_openvino_provider():
-    import pidocr.engine as engine_mod
-    from pidocr.config import Config
+    import pylex.engine as engine_mod
+    from pylex.config import Config
 
     kwargs = engine_mod._paddle_runtime_kwargs(Config(inference_engine="openvino", cpu_threads=4))
 
@@ -206,12 +206,12 @@ def test_openvino_runtime_maps_to_onnxruntime_with_openvino_provider():
 
 
 def test_openvino_runtime_uses_configured_cache_directory():
-    import pidocr.engine as engine_mod
-    from pidocr.config import Config
+    import pylex.engine as engine_mod
+    from pylex.config import Config
 
     kwargs = engine_mod._paddle_runtime_kwargs(
-        Config(inference_engine="openvino", runtime_cache_dir="C:/pidocr-cache")
+        Config(inference_engine="openvino", runtime_cache_dir="C:/pylex-cache")
     )
 
     provider_options = kwargs["engine_config"]["provider_options"][0]
-    assert provider_options["cache_dir"] == "C:/pidocr-cache"
+    assert provider_options["cache_dir"] == "C:/pylex-cache"

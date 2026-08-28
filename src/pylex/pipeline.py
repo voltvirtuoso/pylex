@@ -33,12 +33,12 @@ try:
 except ImportError:  # pragma: no cover
     Image = None
 
-from pidocr.config import PDF_EXTS, Config
-from pidocr.geometry import get_page_rotation, render_pdf_page_for_ocr
-from pidocr.overlay import build_invisible_text_overlay
-from pidocr.tiling import ocr_image_tiled
+from pylex.config import PDF_EXTS, Config
+from pylex.geometry import get_page_rotation, render_pdf_page_for_ocr
+from pylex.overlay import build_invisible_text_overlay
+from pylex.tiling import ocr_image_tiled
 
-log = logging.getLogger("pidocr")
+log = logging.getLogger("pylex")
 
 REQUIRED_PACKAGES = {
     "pypdfium2": pdfium,
@@ -54,7 +54,7 @@ def check_dependencies() -> None:
         raise SystemExit(
             "Missing required package(s): "
             + ", ".join(missing)
-            + "\nInstall with: pip install pidocr[ocr]"
+            + "\nInstall with: pip install pylex[ocr]"
         )
 
 

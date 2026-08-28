@@ -3,17 +3,17 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "pidocr"
-# The release version is sourced from src/pidocr/__init__.py.
+name = "pylex"
+# The release version is sourced from src/pylex/__init__.py.
 dynamic = ["version"]
-description = "Fast, searchable OCR text layers for PDFs and images, with an accuracy-first tiled mode, a simple-image fast path, reliable batch progress, and correctly placed text on rotated engineering drawings."
+description = "Generic Python OCR and language extraction for images and documents, with searchable PDF output and a reusable library API."
 readme = "README.md"
 requires-python = ">=3.10"
 license = { text = "MIT" }
 authors = [
     { name = "Haroon" },
 ]
-keywords = ["ocr", "pdf", "paddleocr", "p&id", "engineering-drawings", "searchable-pdf", "batch-processing", "fast-ocr"]
+keywords = ["ocr", "text-extraction", "paddleocr", "openvino", "onnx", "pdf", "searchable-pdf", "document-processing", "computer-vision"]
 classifiers = [
     "Environment :: Console",
     "Intended Audience :: Science/Research",
@@ -42,18 +42,18 @@ openvino = ["onnxruntime-openvino>=1.24,<2"]
 dev = ["pytest>=7.0", "ruff>=0.4"]
 
 [project.urls]
-Homepage = "https://github.com/haroon/pidocr"
-Issues = "https://github.com/haroon/pidocr/issues"
-Changelog = "https://github.com/haroon/pidocr/blob/main/CHANGELOG.md"
+Homepage = "https://github.com/haroon/pylex"
+Issues = "https://github.com/haroon/pylex/issues"
+Changelog = "https://github.com/haroon/pylex/blob/main/CHANGELOG.md"
 
 [project.scripts]
-pidocr = "pidocr.cli:main"
+pylex = "pylex.cli:main"
 
 [tool.hatch.version]
-path = "src/pidocr/__init__.py"
+path = "src/pylex/__init__.py"
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/pidocr"]
+packages = ["src/pylex"]
 
 [tool.ruff]
 line-length = 110

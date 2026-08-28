@@ -26,10 +26,10 @@ from collections.abc import Callable
 
 import numpy as np
 
-from pidocr.config import Config
-from pidocr.engine import ocr_image, ocr_images
+from pylex.config import Config
+from pylex.engine import ocr_image, ocr_images
 
-log = logging.getLogger("pidocr")
+log = logging.getLogger("pylex")
 
 
 def compute_tiles(width: int, height: int, tile_size: int, overlap: int) -> list[tuple[int, int, int, int]]:

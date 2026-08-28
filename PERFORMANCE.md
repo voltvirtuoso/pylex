@@ -4,7 +4,7 @@
 
 The project was slow on simple images for two separate reasons. First, the default accuracy-oriented workflow is designed for large, dense P&ID drawings: it can run multiple overlapping tile inferences and it enables PaddleOCR's optional text-line orientation classifier. Second, PaddleOCR model import and backend initialization are expensive on the first run, particularly when multiple worker processes each load their own model stack. The current normal path uses an automatic CPU runtime: ONNX Runtime when installed, with dynamic Paddle as the fallback. Static oneDNN/MKLDNN remains an explicit option because a real Paddle 3.3.1 test hit an unsupported PIR/oneDNN operator during inference.
 
-For a simple upright image, use the default automatic runtime with `-j 1`. Install `pip install pidocr[ocr]` so ONNX Runtime is available; use `-v` to confirm the selected engine. The verified medium-model command is `pidocr image.png --model-size medium --inference-engine auto -j 1`. For a low-resolution image that produces no usable text on the first pass, add `--retry-upscale`. PP-OCRv6 small now uses one full-page pass automatically when the image fits the detector side limit and the 8-megapixel safety budget; larger or dense P&ID pages retain overlapping tiles. Use `--strict-tiling` to force tiles for a small-model image. The CLI progress display advances through page rendering and tile inference rather than updating only when the entire file completes. This release uses PaddleOCR only; no Windows OCR fallback is included.
+For a simple upright image, use the default automatic runtime with `-j 1`. Install `pip install pylex[ocr]` so ONNX Runtime is available; use `-v` to confirm the selected engine. The verified medium-model command is `pylex image.png --model-size medium --inference-engine auto -j 1`. For a low-resolution image that produces no usable text on the first pass, add `--retry-upscale`. PP-OCRv6 small now uses one full-page pass automatically when the image fits the detector side limit and the 8-megapixel safety budget; larger or dense P&ID pages retain overlapping tiles. Use `--strict-tiling` to force tiles for a small-model image. The CLI progress display advances through page rendering and tile inference rather than updating only when the entire file completes. This release uses PaddleOCR only; no Windows OCR fallback is included.
 
 ## What the research found
 
@@ -14,7 +14,7 @@ PaddleOCR's high-performance inference documentation describes automatic or expl
 
 Windows-native OCR was evaluated but deliberately excluded from this release. The project’s performance and accuracy path is now Paddle-only so that model selection, preprocessing, runtime acceleration, and output behavior remain consistent across supported environments.
 
-## Changes in pidocr 1.5.7
+## Changes in pylex 1.5.7
 
 The 1.5.7 patch adds an explicit OpenVINO execution-provider mode through
 PaddleX's supported ONNX Runtime runner. Automatic mode selects OpenVINO when
@@ -26,7 +26,7 @@ Paddle. OpenVINO is optimized for Intel hardware and is not guaranteed to beat
 standard ONNX Runtime on every CPU, so target-machine validation remains
 important.
 
-## Changes in pidocr 1.5.6
+## Changes in pylex 1.5.6
 
 The 1.5.6 patch makes automatic runtime selection use ONNX Runtime when its
 portable CPU package is installed, with dynamic Paddle as the fallback. In a
@@ -36,14 +36,14 @@ initialization was 4.835 seconds versus 3.035 seconds on the repeat ONNX run.
 These are directional measurements, not guarantees for every Windows CPU or
 image; validate the selected runtime on representative P&ID samples.
 
-## Changes in pidocr 1.5.5
+## Changes in pylex 1.5.5
 
 The 1.5.4 patch makes progress meaningful within a file. During standalone-image
 OCR, rendering and each tile pass update the displayed percentage; during PDF
 OCR, rendering and completed pages do the same. A one-file run can therefore
 show intermediate progress before the final `1/1` completion state.
 
-## Changes in pidocr 1.5.3
+## Changes in pylex 1.5.3
 
 The 1.5.3 patch adds adaptive full-page inference for PP-OCRv6 small images
 that fit within the configured detector resolution and 8-megapixel budget. It
@@ -51,7 +51,7 @@ avoids redundant overlapping tile passes without disabling text-line orientation
 or changing detection/recognition thresholds. Use `--strict-tiling` when dense
 P&ID recall is more important than the adaptive latency optimization.
 
-## Changes in pidocr 1.5.2
+## Changes in pylex 1.5.2
 
 The 1.5.2 patch makes the previously opaque single-image phase visible. The
 CLI now reports the model tier and inference engine during initialization,
@@ -60,16 +60,16 @@ prints the measured engine-ready time, reports `Running OCR`, and shows
 model itself, but they distinguish model download/initialization from inference
 and prevent a long 0% display from looking like a deadlock.
 
-## Changes in pidocr 1.5.1
+## Changes in pylex 1.5.1
 
 The 1.5.1 patch corrects a PaddleOCR 3.7 configuration mismatch: `cpu_threads`
 is not accepted by the dynamic runner, so it is now sent only to static and
 ONNX Runtime configurations. If an explicitly selected optimized runtime fails,
-pidocr rebuilds the same Paddle model with dynamic Paddle inference instead of
+pylex rebuilds the same Paddle model with dynamic Paddle inference instead of
 retrying static oneDNN. The user-reported PP-OCRv6 medium CLI path was then
 smoke-tested end to end and produced a searchable PDF successfully.
 
-## Changes in pidocr 1.5.0
+## Changes in pylex 1.5.0
 
 | Area | Change | Expected effect |
 |---|---|---|
@@ -86,19 +86,19 @@ smoke-tested end to end and produced a searchable PDF successfully.
 For a simple image or upright scan, run the normal optimized path:
 
 ```powershell
-pidocr "C:\path\simple.png" --inference-engine paddle_static -j 1
+pylex "C:\path\simple.png" --inference-engine paddle_static -j 1
 ```
 
 For a low-resolution image where the first pass misses all text:
 
 ```powershell
-pidocr "C:\path\simple.png" --inference-engine paddle_static --retry-upscale -j 1
+pylex "C:\path\simple.png" --inference-engine paddle_static --retry-upscale -j 1
 ```
 
 For a large, crowded P&ID, keep the accuracy-first mode:
 
 ```powershell
-pidocr "C:\path\drawing.pdf" --tile-size 1000 --tile-overlap 250 `
+pylex "C:\path\drawing.pdf" --tile-size 1000 --tile-overlap 250 `
   --det-box-thresh 0.45 --det-unclip-ratio 2.0 -j 1
 ```
 

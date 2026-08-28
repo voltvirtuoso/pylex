@@ -1,4 +1,4 @@
-from pidocr.cli import build_arg_parser, config_from_args
+from pylex.cli import build_arg_parser, config_from_args
 
 
 def test_fast_profile_disables_tiling_and_orientation():

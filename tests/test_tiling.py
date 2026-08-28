@@ -3,7 +3,7 @@ from itertools import pairwise
 import numpy as np
 import pytest
 
-from pidocr.tiling import compute_tiles, dedupe_items, ocr_image_tiled
+from pylex.tiling import compute_tiles, dedupe_items, ocr_image_tiled
 
 
 def _quad(x0, y0, x1, y1):
@@ -88,8 +88,8 @@ def test_dedupe_keeps_same_text_when_far_apart():
 # ocr_image_tiled: end-to-end merge behaviour with a stub engine
 # ----------------------------------------------------------------------
 def test_ocr_image_tiled_merges_across_tiles_without_duplicating(monkeypatch):
-    import pidocr.tiling as tiling_mod
-    from pidocr.config import Config
+    import pylex.tiling as tiling_mod
+    from pylex.config import Config
 
     # Build a "page" big enough to force tiling into (at least) 2x2 tiles.
     width, height = 3000, 2200
@@ -117,8 +117,8 @@ def test_ocr_image_tiled_merges_across_tiles_without_duplicating(monkeypatch):
 
 
 def test_ocr_image_tiled_falls_back_to_single_pass_when_small(monkeypatch):
-    import pidocr.tiling as tiling_mod
-    from pidocr.config import Config
+    import pylex.tiling as tiling_mod
+    from pylex.config import Config
 
     img = np.zeros((400, 600, 3), dtype=np.uint8)
     calls = []
@@ -143,8 +143,8 @@ def test_tiling_recovers_a_tag_a_whole_page_pass_misses(monkeypatch):
     exact same text on an open pipe run gets picked up fine. Tiling OCRs
     each region at full resolution and should recover it.
     """
-    import pidocr.tiling as tiling_mod
-    from pidocr.config import Config
+    import pylex.tiling as tiling_mod
+    from pylex.config import Config
 
     width, height = 3400, 2500
     OPEN_TEXT_XY = (300, 300)  # sparse area: any pass should catch this
@@ -197,8 +197,8 @@ def test_tiling_recovers_a_tag_a_whole_page_pass_misses(monkeypatch):
 
 
 def test_ocr_image_tiled_fast_mode_uses_one_pass(monkeypatch):
-    import pidocr.tiling as tiling_mod
-    from pidocr.config import Config
+    import pylex.tiling as tiling_mod
+    from pylex.config import Config
 
     calls = []
 
@@ -215,8 +215,8 @@ def test_ocr_image_tiled_fast_mode_uses_one_pass(monkeypatch):
 
 
 def test_ocr_image_tiled_reports_tile_progress(monkeypatch):
-    import pidocr.tiling as tiling_mod
-    from pidocr.config import Config
+    import pylex.tiling as tiling_mod
+    from pylex.config import Config
 
     progress = []
     monkeypatch.setattr(tiling_mod, "ocr_image", lambda engine, crop, cfg: [])
@@ -233,8 +233,8 @@ def test_ocr_image_tiled_reports_tile_progress(monkeypatch):
 
 
 def test_ocr_image_tiled_adapts_to_one_pass_within_detector_budget(monkeypatch):
-    import pidocr.tiling as tiling_mod
-    from pidocr.config import Config
+    import pylex.tiling as tiling_mod
+    from pylex.config import Config
 
     calls = []
     monkeypatch.setattr(
@@ -250,8 +250,8 @@ def test_ocr_image_tiled_adapts_to_one_pass_within_detector_budget(monkeypatch):
 
 
 def test_vertical_text_retry_recovers_label_from_rotated_pass(monkeypatch):
-    import pidocr.tiling as tiling_mod
-    from pidocr.config import Config
+    import pylex.tiling as tiling_mod
+    from pylex.config import Config
 
     calls = []
 

@@ -7,20 +7,20 @@ from pathlib import Path
 import pypdfium2 as pdfium
 from pypdf import PdfReader
 
-from pidocr.config import Config
-from pidocr.engine import get_ocr_engine
-from pidocr.pipeline import get_page_rotation, render_pdf_page_for_ocr
-from pidocr.tiling import compute_tiles, ocr_image_tiled
+from pylex.config import Config
+from pylex.engine import get_ocr_engine
+from pylex.pipeline import get_page_rotation, render_pdf_page_for_ocr
+from pylex.tiling import compute_tiles, ocr_image_tiled
 
 PDF = Path('/home/ubuntu/upload/10020-01-PID-005.pdf')
 
 
 def main() -> None:
-    tile_size = int(os.environ.get('PIDOCR_TILE_SIZE', '1600'))
-    tile_batch_size = int(os.environ.get('PIDOCR_TILE_BATCH_SIZE', '4'))
-    tile_overlap = int(os.environ.get('PIDOCR_TILE_OVERLAP', '220'))
-    dpi = int(os.environ.get('PIDOCR_DPI', '300'))
-    use_orientation = os.environ.get('PIDOCR_ORIENTATION', '1') != '0'
+    tile_size = int(os.environ.get('PYLEX_TILE_SIZE', '1600'))
+    tile_batch_size = int(os.environ.get('PYLEX_TILE_BATCH_SIZE', '4'))
+    tile_overlap = int(os.environ.get('PYLEX_TILE_OVERLAP', '220'))
+    dpi = int(os.environ.get('PYLEX_DPI', '300'))
+    use_orientation = os.environ.get('PYLEX_ORIENTATION', '1') != '0'
     cfg = Config(
         model_size='small',
         inference_engine='auto',

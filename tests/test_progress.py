@@ -1,4 +1,4 @@
-from pidocr.progress import ProgressBar
+from pylex.progress import ProgressBar
 
 
 def test_progress_bar_disabled_on_non_tty(monkeypatch, capsys):

@@ -9,10 +9,10 @@ import numpy as np
 from reportlab.pdfbase.pdfmetrics import stringWidth
 from reportlab.pdfgen import canvas as rl_canvas
 
-from pidocr.config import Config
-from pidocr.geometry import display_poly_to_pdf, order_quad, polygon_geometry
+from pylex.config import Config
+from pylex.geometry import display_poly_to_pdf, order_quad, polygon_geometry
 
-log = logging.getLogger("pidocr")
+log = logging.getLogger("pylex")
 
 
 def build_invisible_text_overlay(
@@ -84,7 +84,7 @@ def build_invisible_text_overlay(
 
             c.drawText(t)
             c.restoreState()
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001 - skip only malformed overlay regions
             skipped += 1
             log.debug("Overlay item skipped: %s", e)
 

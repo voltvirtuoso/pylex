@@ -13,9 +13,9 @@ import time
 import numpy as np
 from PIL import Image
 
-from pidocr.config import Config
+from pylex.config import Config
 
-log = logging.getLogger("pidocr")
+log = logging.getLogger("pylex")
 
 _ENGINE = None
 _ENGINE_KEY: tuple[object, ...] | None = None
@@ -23,7 +23,7 @@ _UNSUPPORTED_DET_KWARGS_WARNED = False
 
 # PaddleOCR/PaddleX use a mixture of Python loggers and direct stdout/stderr
 # writes. Keep their normal status chatter out of the application's progress
-# display while preserving pidocr's own warnings and errors.
+# display while preserving pylex's own warnings and errors.
 class _BackendNullStream(io.TextIOBase):
     """Non-closing text sink for third-party handlers created during suppression."""
 
@@ -152,7 +152,7 @@ def _default_runtime_cache_dir() -> str:
         root = os.environ.get("LOCALAPPDATA") or os.path.join(os.path.expanduser("~"), "AppData", "Local")
     else:
         root = os.environ.get("XDG_CACHE_HOME") or os.path.join(os.path.expanduser("~"), ".cache")
-    return os.path.join(root, "pidocr", "openvino")
+    return os.path.join(root, "pylex", "openvino")
 
 
 def _onnxruntime_has_openvino() -> bool:
@@ -277,7 +277,7 @@ def get_ocr_engine(cfg: Config):
     except ImportError as e:
         raise SystemExit(
             "paddleocr is not installed. Install it with:\n"
-            "  pip install pidocr[ocr]\n"
+            "  pip install pylex[ocr]\n"
             "or:\n"
             "  pip install paddleocr paddlepaddle"
         ) from e
@@ -443,7 +443,7 @@ def ocr_image(engine, img_array: np.ndarray, cfg: Config):
     """Run PaddleOCR on an RGB numpy array; return [(text, quad[4,2], score)].
 
     This is a single whole-image pass — for large/dense drawings, callers
-    should generally go through pidocr.tiling.ocr_image_tiled() instead,
+    should generally go through pylex.tiling.ocr_image_tiled() instead,
     which splits into overlapping windows and merges the result. An optional
     upscale retry runs only when the first pass returns no usable text.
     """

@@ -16,7 +16,7 @@ import numpy as np
 def get_page_rotation(page) -> int:
     try:
         return int(page.get("/Rotate", 0) or 0) % 360
-    except Exception:
+    except Exception:  # noqa: BLE001 - malformed PDF metadata should not stop processing
         return 0
 
 
@@ -24,8 +24,8 @@ def render_pdf_page_for_ocr(pdfium_page, rotation: int, dpi: int):
     """Render a PDF page exactly as the viewer displays it (rotation applied)."""
     try:
         pdfium_page.set_rotation(rotation)
-    except Exception:
-        pass
+    except Exception:  # noqa: BLE001 - renderer versions may not expose rotation
+        rotation = 0
 
     scale = dpi / 72.0
     bitmap = pdfium_page.render(scale=scale)

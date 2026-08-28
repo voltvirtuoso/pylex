@@ -5,9 +5,9 @@ import time
 import numpy as np
 from PIL import Image, ImageDraw, ImageFont
 
-from pidocr.config import Config
-from pidocr.engine import get_ocr_engine
-from pidocr.tiling import ocr_image_tiled
+from pylex.config import Config
+from pylex.engine import get_ocr_engine
+from pylex.tiling import ocr_image_tiled
 
 
 def run(model_size: str) -> None:
@@ -35,7 +35,7 @@ def run(model_size: str) -> None:
     inference_seconds = time.perf_counter() - started
     print(f"model={model_size} engine_init_seconds={init_seconds:.3f}")
     print(f"model={model_size} inference_seconds={inference_seconds:.3f} detections={len(items)}")
-    print(f"model={model_size} texts={repr([text for text, _, _ in items])}")
+    print(f"model={model_size} texts={[text for text, _, _ in items]!r}")
 
 
 if __name__ == "__main__":

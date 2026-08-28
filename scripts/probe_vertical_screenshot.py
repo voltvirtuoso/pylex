@@ -5,9 +5,9 @@ from pathlib import Path
 import numpy as np
 from PIL import Image
 
-from pidocr.config import Config
-from pidocr.engine import get_ocr_engine
-from pidocr.tiling import ocr_image_tiled
+from pylex.config import Config
+from pylex.engine import get_ocr_engine
+from pylex.tiling import ocr_image_tiled
 
 SOURCE = Path('/home/ubuntu/upload/pasted_file_PgMc78_image.png')
 

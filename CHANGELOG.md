@@ -7,6 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.0.0] - 2026-08-28
+
+### Changed
+- Renamed the distribution and command-line program from `pidocr` to `pylex`.
+- Generalized the project from engineering drawings to broad OCR and document
+  text extraction workloads.
+- Added the reusable `pylex.api` library interface with `extract_text`,
+  `create_engine`, and `create_searchable_document`.
+- Exported `TextRegion`, `Config`, `FileResult`, and the document-processing
+  functions from the `pylex` package root.
+- Renamed internal environment variables and module imports to the Pylex
+  namespace.
+
+### Compatibility
+- This is a major package rename. Update imports from `pidocr` to `pylex` and
+  the executable from `pidocr` to `pylex`.
+
 ## [1.5.10] - 2026-08-27
 
 ### Improved
@@ -155,7 +172,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Suppressed the misleading Windows `INFO: Could not find files for the
   given pattern(s).` message emitted when Paddle checks whether optional
   `ccache` tooling is installed. This message is from Paddle’s startup probe,
-  not from pidocr’s `-xf` matcher.
+  not from pylex’s `-xf` matcher.
 
 ## [1.3.1] - 2026-08-27
 
@@ -164,8 +181,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   imports, initializes, and performs its first model/backend setup, instead of
   leaving the progress display at 0% until the first file completes.
 - PaddleOCR/PaddleX status output is suppressed around engine construction and
-  prediction, preventing backend chatter from drowning out pidocr progress
-  output while preserving pidocr warnings and errors. Windows OS-level output
+  prediction, preventing backend chatter from drowning out pylex progress
+  output while preserving pylex warnings and errors. Windows OS-level output
   redirection also handles status emitted by backend child processes.
 - Clarified `-xf` wildcard usage for suffix-style exclusions: use patterns
   such as `*_OCR*` to skip previously generated OCR outputs and prevent names
@@ -180,7 +197,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   separators, so both `*_draft*` and `backup/*` work as expected).
   Matched against the filename and the path relative to the input folder.
   Repeatable, and comma-separable within one flag.
-- Live progress bar (`pidocr.progress`, no external dependency) tracking
+- Live progress bar (`pylex.progress`, no external dependency) tracking
   files processed, with the current file — and page, for a large
   multi-page PDF — shown as a trailing suffix. Falls back to plain
   per-file lines when stdout isn't a real terminal (piped/redirected
@@ -195,7 +212,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [1.2.0] - 2026-08-27
 
 ### Added
-- Tiled OCR (`pidocr.tiling`): pages are OCR'd in overlapping windows at
+- Tiled OCR (`pylex.tiling`): pages are OCR'd in overlapping windows at
   full local resolution by default (`--tile-size 1600 --tile-overlap 220`),
   then merged and de-duplicated back into page coordinates. Fixes a
   whole-page pass missing tags squeezed into dense symbol clusters (a
@@ -212,14 +229,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 - `pyproject.toml` now sources `version` dynamically from
-  `pidocr.__version__` (`[tool.hatch.version]`) instead of duplicating the
+  `pylex.__version__` (`[tool.hatch.version]`) instead of duplicating the
   version string in two places.
 
 ## [1.1.0] - 2026-08-27
 
 ### Added
 - `-j`/`--jobs N`: process N files in parallel using separate worker
-  processes (`pidocr.runner`), each loading its own OCR engine once and
+  processes (`pylex.runner`), each loading its own OCR engine once and
   reusing it across every file that worker picks up. Parallelism is
   across files, not pages within one file.
 - Warning when `--gpu` is combined with `-j > 1` (workers would contend
@@ -230,9 +247,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [1.0.0] - 2026-08-25
 
 ### Added
-- Initial `pidocr` CLI package, restructured from a working single-file
+- Initial `pylex` CLI package, restructured from a working single-file
   PaddleOCR proof of concept into an installable `src/`-layout package
-  (`pyproject.toml`, console-script entry point, `python -m pidocr`).
+  (`pyproject.toml`, console-script entry point, `python -m pylex`).
 - Core OCR pipeline: render a PDF page as the viewer displays it, run
   PaddleOCR, transfer the page's `/Rotate` into its content stream, and
   merge an invisible text layer anchored at the start of each detected
@@ -250,22 +267,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Unit tests for page-range parsing, quad geometry, and output-path
   resolution.
 
-[Unreleased]: https://github.com/haroon/pidocr/compare/v1.5.10...HEAD
-[1.5.10]: https://github.com/haroon/pidocr/compare/v1.5.9...v1.5.10
-[1.5.9]: https://github.com/haroon/pidocr/compare/v1.5.8...v1.5.9
-[1.5.8]: https://github.com/haroon/pidocr/compare/v1.5.7...v1.5.8
-[1.5.7]: https://github.com/haroon/pidocr/compare/v1.5.6...v1.5.7
-[1.5.6]: https://github.com/haroon/pidocr/compare/v1.5.5...v1.5.6
-[1.5.5]: https://github.com/haroon/pidocr/compare/v1.5.4...v1.5.5
-[1.5.4]: https://github.com/haroon/pidocr/compare/v1.5.3...v1.5.4
-[1.5.3]: https://github.com/haroon/pidocr/compare/v1.5.2...v1.5.3
-[1.5.2]: https://github.com/haroon/pidocr/compare/v1.5.1...v1.5.2
-[1.5.1]: https://github.com/haroon/pidocr/compare/v1.5.0...v1.5.1
-[1.5.0]: https://github.com/haroon/pidocr/compare/v1.4.0...v1.5.0
-[1.4.0]: https://github.com/haroon/pidocr/compare/v1.3.2...v1.4.0
-[1.3.2]: https://github.com/haroon/pidocr/compare/v1.3.1...v1.3.2
-[1.3.1]: https://github.com/haroon/pidocr/compare/v1.3.0...v1.3.1
-[1.3.0]: https://github.com/haroon/pidocr/compare/v1.2.0...v1.3.0
-[1.2.0]: https://github.com/haroon/pidocr/compare/v1.1.0...v1.2.0
-[1.1.0]: https://github.com/haroon/pidocr/compare/v1.0.0...v1.1.0
-[1.0.0]: https://github.com/haroon/pidocr/releases/tag/v1.0.0
+[Unreleased]: https://github.com/haroon/pylex/compare/v2.0.0...HEAD
+[2.0.0]: https://github.com/haroon/pylex/compare/v1.5.10...v2.0.0
+[1.5.10]: https://github.com/haroon/pylex/compare/v1.5.9...v1.5.10
+[1.5.9]: https://github.com/haroon/pylex/compare/v1.5.8...v1.5.9
+[1.5.8]: https://github.com/haroon/pylex/compare/v1.5.7...v1.5.8
+[1.5.7]: https://github.com/haroon/pylex/compare/v1.5.6...v1.5.7
+[1.5.6]: https://github.com/haroon/pylex/compare/v1.5.5...v1.5.6
+[1.5.5]: https://github.com/haroon/pylex/compare/v1.5.4...v1.5.5
+[1.5.4]: https://github.com/haroon/pylex/compare/v1.5.3...v1.5.4
+[1.5.3]: https://github.com/haroon/pylex/compare/v1.5.2...v1.5.3
+[1.5.2]: https://github.com/haroon/pylex/compare/v1.5.1...v1.5.2
+[1.5.1]: https://github.com/haroon/pylex/compare/v1.5.0...v1.5.1
+[1.5.0]: https://github.com/haroon/pylex/compare/v1.4.0...v1.5.0
+[1.4.0]: https://github.com/haroon/pylex/compare/v1.3.2...v1.4.0
+[1.3.2]: https://github.com/haroon/pylex/compare/v1.3.1...v1.3.2
+[1.3.1]: https://github.com/haroon/pylex/compare/v1.3.0...v1.3.1
+[1.3.0]: https://github.com/haroon/pylex/compare/v1.2.0...v1.3.0
+[1.2.0]: https://github.com/haroon/pylex/compare/v1.1.0...v1.2.0
+[1.1.0]: https://github.com/haroon/pylex/compare/v1.0.0...v1.1.0
+[1.0.0]: https://github.com/haroon/pylex/releases/tag/v1.0.0

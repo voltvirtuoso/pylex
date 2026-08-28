@@ -1,6 +1,6 @@
 import sys
 
-from pidocr.cli import main
+from pylex.cli import main
 
 if __name__ == "__main__":
     sys.exit(main())
