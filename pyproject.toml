@@ -3,20 +3,38 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "pylex"
-# The release version is sourced from src/pylex/__init__.py.
+# The distribution name is intentionally different from the import and CLI name.
+# The exact `pylex` name is already used by an unrelated legacy PyPI project.
+name = "pylex-ocr"
 dynamic = ["version"]
-description = "Generic Python OCR and language extraction for images and documents, with searchable PDF output and a reusable library API."
+description = "Python OCR for scanned PDFs and images: create searchable PDFs, extract text regions, and process documents in batches."
 readme = "README.md"
 requires-python = ">=3.10"
 license = { text = "MIT" }
 authors = [
-    { name = "Haroon" },
+    { name = "Haroon Raza" },
 ]
-keywords = ["ocr", "text-extraction", "paddleocr", "openvino", "onnx", "pdf", "searchable-pdf", "document-processing", "computer-vision"]
+maintainers = [
+    { name = "Haroon Raza" },
+]
+keywords = [
+    "python-ocr",
+    "optical-character-recognition",
+    "ocr",
+    "pdf-ocr",
+    "searchable-pdf",
+    "scanned-pdf",
+    "document-text-extraction",
+    "batch-ocr",
+    "paddleocr",
+    "onnxruntime",
+    "openvino",
+]
 classifiers = [
+    "Development Status :: 4 - Beta",
     "Environment :: Console",
-    "Intended Audience :: Science/Research",
+    "Intended Audience :: Developers",
+    "Intended Audience :: End Users/Desktop",
     "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
     "Programming Language :: Python :: 3",
@@ -24,9 +42,10 @@ classifiers = [
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Topic :: Multimedia :: Graphics :: Graphics Conversion",
+    "Topic :: Scientific/Engineering :: Image Processing",
     "Topic :: Text Processing",
+    "Topic :: Text Processing :: Linguistic",
 ]
-
 dependencies = [
     "numpy>=1.24",
     "pypdfium2>=4.0",
@@ -36,17 +55,28 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-ocr = ["paddleocr>=3.0,<4", "paddlepaddle>=3.0,<4"]
+ocr = [
+    "paddleocr>=3.0,<4",
+    "paddlepaddle>=3.0,<4",
+]
 onnx = ["onnxruntime>=1.18"]
 openvino = ["onnxruntime-openvino>=1.24,<2"]
-dev = ["pytest>=7.0", "ruff>=0.4"]
+dev = [
+    "pytest>=7.0",
+    "ruff>=0.4",
+    "build>=1.2",
+    "twine>=5.0",
+]
 
 [project.urls]
 Homepage = "https://github.com/voltvirtuoso/pylex"
-Issues = "https://github.com/haroon/voltvirtuoso/issues"
+Repository = "https://github.com/voltvirtuoso/pylex"
+Issues = "https://github.com/voltvirtuoso/pylex/issues"
 Changelog = "https://github.com/voltvirtuoso/pylex/blob/main/CHANGELOG.md"
+Documentation = "https://github.com/voltvirtuoso/pylex/tree/main/docs"
 
 [project.scripts]
+# The user-facing executable remains `pylex`.
 pylex = "pylex.cli:main"
 
 [tool.hatch.version]

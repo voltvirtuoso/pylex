@@ -267,23 +267,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Unit tests for page-range parsing, quad geometry, and output-path
   resolution.
 
-[Unreleased]: https://github.com/haroon/pylex/compare/v2.0.0...HEAD
-[2.0.0]: https://github.com/haroon/pylex/compare/v1.5.10...v2.0.0
-[1.5.10]: https://github.com/haroon/pylex/compare/v1.5.9...v1.5.10
-[1.5.9]: https://github.com/haroon/pylex/compare/v1.5.8...v1.5.9
-[1.5.8]: https://github.com/haroon/pylex/compare/v1.5.7...v1.5.8
-[1.5.7]: https://github.com/haroon/pylex/compare/v1.5.6...v1.5.7
-[1.5.6]: https://github.com/haroon/pylex/compare/v1.5.5...v1.5.6
-[1.5.5]: https://github.com/haroon/pylex/compare/v1.5.4...v1.5.5
-[1.5.4]: https://github.com/haroon/pylex/compare/v1.5.3...v1.5.4
-[1.5.3]: https://github.com/haroon/pylex/compare/v1.5.2...v1.5.3
-[1.5.2]: https://github.com/haroon/pylex/compare/v1.5.1...v1.5.2
-[1.5.1]: https://github.com/haroon/pylex/compare/v1.5.0...v1.5.1
-[1.5.0]: https://github.com/haroon/pylex/compare/v1.4.0...v1.5.0
-[1.4.0]: https://github.com/haroon/pylex/compare/v1.3.2...v1.4.0
-[1.3.2]: https://github.com/haroon/pylex/compare/v1.3.1...v1.3.2
-[1.3.1]: https://github.com/haroon/pylex/compare/v1.3.0...v1.3.1
-[1.3.0]: https://github.com/haroon/pylex/compare/v1.2.0...v1.3.0
-[1.2.0]: https://github.com/haroon/pylex/compare/v1.1.0...v1.2.0
-[1.1.0]: https://github.com/haroon/pylex/compare/v1.0.0...v1.1.0
-[1.0.0]: https://github.com/haroon/pylex/releases/tag/v1.0.0
+[Unreleased]: https://github.com/voltvirtuoso/pylex/compare/v2.0.0...HEAD
+[2.0.0]: https://github.com/voltvirtuoso/pylex/compare/v1.5.10...v2.0.0
+[1.5.10]: https://github.com/voltvirtuoso/pylex/compare/v1.5.9...v1.5.10
+[1.5.9]: https://github.com/voltvirtuoso/pylex/compare/v1.5.8...v1.5.9
+[1.5.8]: https://github.com/voltvirtuoso/pylex/compare/v1.5.7...v1.5.8
+[1.5.7]: https://github.com/voltvirtuoso/pylex/compare/v1.5.6...v1.5.7
+[1.5.6]: https://github.com/voltvirtuoso/pylex/compare/v1.5.5...v1.5.6
+[1.5.5]: https://github.com/voltvirtuoso/pylex/compare/v1.5.4...v1.5.5
+[1.5.4]: https://github.com/voltvirtuoso/pylex/compare/v1.5.3...v1.5.4
+[1.5.3]: https://github.com/voltvirtuoso/pylex/compare/v1.5.2...v1.5.3
+[1.5.2]: https://github.com/voltvirtuoso/pylex/compare/v1.5.1...v1.5.2
+[1.5.1]: https://github.com/voltvirtuoso/pylex/compare/v1.5.0...v1.5.1
+[1.5.0]: https://github.com/voltvirtuoso/pylex/compare/v1.4.0...v1.5.0
+[1.4.0]: https://github.com/voltvirtuoso/pylex/compare/v1.3.2...v1.4.0
+[1.3.2]: https://github.com/voltvirtuoso/pylex/compare/v1.3.1...v1.3.2
+[1.3.1]: https://github.com/voltvirtuoso/pylex/compare/v1.3.0...v1.3.1
+[1.3.0]: https://github.com/voltvirtuoso/pylex/compare/v1.2.0...v1.3.0
+[1.2.0]: https://github.com/voltvirtuoso/pylex/compare/v1.1.0...v1.2.0
+[1.1.0]: https://github.com/voltvirtuoso/pylex/compare/v1.0.0...v1.1.0
+[1.0.0]: https://github.com/voltvirtuoso/pylex/releases/tag/v1.0.0

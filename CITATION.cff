@@ -1,0 +1,20 @@
+cff-version: 1.2.0
+message: "If Pylex contributed to your work, please cite the version you used."
+title: "Pylex: Python OCR for searchable PDFs and document text extraction"
+type: software
+authors:
+  - family-names: Raza
+    given-names: Haroon
+    affiliation: "Pylex maintainers"
+repository-code: "https://github.com/voltvirtuoso/pylex"
+url: "https://github.com/voltvirtuoso/pylex"
+license: MIT
+version: 2.0.0
+date-released: 2026-08-28
+keywords:
+  - Python OCR
+  - optical character recognition
+  - searchable PDF
+  - scanned PDF
+  - document text extraction
+  - batch OCR
