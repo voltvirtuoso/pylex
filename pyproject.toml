@@ -42,9 +42,9 @@ openvino = ["onnxruntime-openvino>=1.24,<2"]
 dev = ["pytest>=7.0", "ruff>=0.4"]
 
 [project.urls]
-Homepage = "https://github.com/haroon/pylex"
-Issues = "https://github.com/haroon/pylex/issues"
-Changelog = "https://github.com/haroon/pylex/blob/main/CHANGELOG.md"
+Homepage = "https://github.com/voltvirtuoso/pylex"
+Issues = "https://github.com/haroon/voltvirtuoso/issues"
+Changelog = "https://github.com/voltvirtuoso/pylex/blob/main/CHANGELOG.md"
 
 [project.scripts]
 pylex = "pylex.cli:main"
