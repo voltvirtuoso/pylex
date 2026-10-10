@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import contextlib
+import dataclasses
 import importlib.util
 import io
 import logging
@@ -13,9 +14,18 @@ import time
 import numpy as np
 from PIL import Image
 
+from pylex import runtime
 from pylex.config import Config
 
 log = logging.getLogger("pylex")
+
+
+class PylexSetupError(RuntimeError):
+    """The OCR backend or device is not set up. The message says how to fix it.
+
+    Raised instead of SystemExit so applications that embed Pylex can catch it.
+    The command line prints the message and exits with status 1.
+    """
 
 _ENGINE = None
 _ENGINE_KEY: tuple[object, ...] | None = None
@@ -167,13 +177,108 @@ def _onnxruntime_has_openvino() -> bool:
         return False
 
 
+_DEVICE_TYPES = {"cpu", "gpu", "xpu", "npu", "mlu", "gcu", "dcu", "iluvatar_gpu", "metax_gpu"}
+
+
+def resolve_device(cfg: Config) -> tuple[str, int | None]:
+    """Resolve ``cfg.device`` / ``cfg.use_gpu`` to ``(device_type, device_index)``.
+
+    ``"auto"`` becomes GPU when a CUDA-capable runtime is installed, else CPU.
+    ``"cuda"`` is accepted as an alias of ``"gpu"``. The index is None when the
+    caller did not pick one. Raises ValueError for an unknown or malformed device.
+    """
+    spec = (cfg.device or ("gpu" if cfg.use_gpu else "cpu")).strip().lower()
+    if spec == "auto":
+        return ("gpu", None) if runtime.cuda_available() else ("cpu", None)
+    kind, _, index = spec.partition(":")
+    if kind == "cuda":
+        kind = "gpu"
+    if kind not in _DEVICE_TYPES:
+        raise ValueError(
+            f"Unknown device {spec!r}. Use auto, cpu, gpu, gpu:N, or one of: "
+            + ", ".join(sorted(_DEVICE_TYPES - {"cpu", "gpu"}))
+            + "."
+        )
+    if kind == "cpu":
+        if index:
+            raise ValueError("The cpu device does not take an index.")
+        return "cpu", None
+    if index and not index.isdigit():
+        raise ValueError(f"Device index must be a single integer, got {index!r}.")
+    return kind, (int(index) if index else None)
+
+
+def _paddle_device_string(cfg: Config) -> str:
+    kind, index = resolve_device(cfg)
+    return kind if index is None else f"{kind}:{index}"
+
+
 def _effective_inference_engine(cfg: Config) -> str:
     """Resolve the portable automatic runtime choice once per engine build."""
     if cfg.inference_engine != "auto":
         return cfg.inference_engine
+    kind, _ = resolve_device(cfg)
+    if kind == "gpu":
+        # ONNX Runtime needs its CUDA provider; otherwise use Paddle's own GPU build.
+        return "onnxruntime" if "CUDAExecutionProvider" in runtime.onnxruntime_providers() else "paddle_dynamic"
+    if kind != "cpu":
+        return "paddle_dynamic"  # accelerator types other than CUDA are Paddle-only
     if _onnxruntime_has_openvino():
         return "openvino"
     return "onnxruntime" if importlib.util.find_spec("onnxruntime") else "paddle_dynamic"
+
+
+_GPU_FIX = (
+    'Install a GPU runtime: pip install "pylex-ocr[gpu]" (CUDA 13) or "pylex-ocr[gpu-cu12]" (CUDA 12). '
+    "Uninstall the CPU onnxruntime package first: pip uninstall -y onnxruntime. "
+    "Run `pylex doctor` for a recommendation for this machine."
+)
+
+
+def _device_problem(cfg: Config, runtime_engine: str) -> str | None:
+    """Explain why the requested device cannot be used, or None if it can."""
+    kind, _ = resolve_device(cfg)
+    if kind == "cpu":
+        return None
+    if runtime_engine == "openvino":
+        return "The OpenVINO runtime in Pylex runs on the CPU only"
+    if kind != "gpu":
+        if runtime_engine == "onnxruntime":
+            return f"ONNX Runtime supports only cpu and gpu devices, not {kind!r}; use --inference-engine paddle_dynamic"
+        return None  # Paddle validates other accelerator types itself
+    if runtime_engine == "onnxruntime":
+        providers = runtime.onnxruntime_providers()
+        if "CUDAExecutionProvider" not in providers:
+            return f"GPU requested, but ONNX Runtime has no CUDA provider (available: {providers or 'none'}). {_GPU_FIX}"
+    elif not runtime.paddle_gpu_installed():
+        return (
+            "GPU requested, but no GPU-capable runtime was found for "
+            f"engine {runtime_engine!r} (paddlepaddle-gpu is not installed). {_GPU_FIX}"
+        )
+    return None
+
+
+def _preflight_device(cfg: Config) -> Config:
+    """Fail clearly, or fall back to CPU, when the requested device is unusable."""
+    problem = _device_problem(cfg, _effective_inference_engine(cfg))
+    if problem is None:
+        return cfg
+    if not cfg.allow_runtime_fallback:
+        raise PylexSetupError(f"{problem}\nRemove --no-runtime-fallback to continue on the CPU instead.")
+    log.warning("%s Continuing on the CPU.", problem)
+    return dataclasses.replace(cfg, device="cpu", use_gpu=False)
+
+
+def _preload_cuda_libraries() -> None:
+    """Let onnxruntime-gpu find CUDA/cuDNN libraries that pip installed (ORT >= 1.21)."""
+    try:
+        import onnxruntime as ort
+
+        preload = getattr(ort, "preload_dlls", None)
+        if preload is not None:
+            preload()
+    except Exception as exc:  # noqa: BLE001 - optional helper; real failures surface later
+        log.debug("onnxruntime.preload_dlls failed: %s", exc)
 
 
 def _paddle_runtime_kwargs(cfg: Config) -> dict:
@@ -185,7 +290,7 @@ def _paddle_runtime_kwargs(cfg: Config) -> dict:
         "use_textline_orientation": cfg.use_textline_orientation and not cfg.fast_mode,
         "lang": cfg.lang,
         "ocr_version": cfg.ocr_version,
-        "device": "gpu" if cfg.use_gpu else "cpu",
+        "device": _paddle_device_string(cfg),
         "textline_orientation_batch_size": cfg.orientation_batch_size,
         "text_recognition_batch_size": cfg.recognition_batch_size,
         "text_rec_score_thresh": cfg.min_confidence,
@@ -208,9 +313,10 @@ def _paddle_runtime_kwargs(cfg: Config) -> dict:
         # PaddleX exposes OpenVINO through its ONNX Runtime runner rather
         # than as a standalone `engine='openvino'` value.
         kwargs["engine"] = "onnxruntime" if runtime_engine == "openvino" else runtime_engine
-        engine_config = {
-            "device_type": "gpu" if cfg.use_gpu else "cpu",
-        }
+        device_kind, device_index = resolve_device(cfg)
+        engine_config = {"device_type": device_kind}
+        if device_index is not None and runtime_engine in {"onnxruntime", "openvino"}:
+            engine_config["device_id"] = device_index
         if runtime_engine == "paddle_static":
             if cfg.cpu_threads:
                 engine_config["cpu_threads"] = cfg.cpu_threads
@@ -241,6 +347,7 @@ def get_ocr_engine(cfg: Config):
     about to happen — not for --help, --dry-run, or argument errors.
     """
     global _ENGINE, _ENGINE_KEY
+    cfg = _preflight_device(cfg)
     runtime_engine = _effective_inference_engine(cfg)
     engine_key = (
         cfg.lang.lower(),
@@ -250,7 +357,7 @@ def get_ocr_engine(cfg: Config):
         cfg.enable_hpi,
         cfg.hpi_backend or "",
         cfg.runtime_cache_dir or "",
-        cfg.use_gpu,
+        _paddle_device_string(cfg),
         cfg.use_textline_orientation and not cfg.fast_mode,
         cfg.orientation_batch_size,
         cfg.recognition_batch_size,
@@ -263,24 +370,22 @@ def get_ocr_engine(cfg: Config):
     _quiet_backend_logging()
 
     log.info(
-        "Loading PaddleOCR engine (version=%s, lang=%s, model=%s, runtime=%s)...",
+        "Loading PaddleOCR engine (version=%s, lang=%s, model=%s, runtime=%s, device=%s)...",
         cfg.ocr_version,
         cfg.lang,
         cfg.model_size,
         runtime_engine,
+        _paddle_device_string(cfg),
     )
+    if runtime_engine == "onnxruntime" and resolve_device(cfg)[0] == "gpu":
+        _preload_cuda_libraries()
     t0 = time.time()
 
     try:
         with _quiet_backend_output():
             from paddleocr import PaddleOCR
     except ImportError as e:
-        raise SystemExit(
-            "paddleocr is not installed. Install it with:\n"
-            "  pip install pylex[ocr]\n"
-            "or:\n"
-            "  pip install paddleocr paddlepaddle"
-        ) from e
+        raise PylexSetupError("paddleocr is not installed.\n" + runtime.install_hint()) from e
 
     _quiet_backend_logging()
     try:
@@ -288,9 +393,9 @@ def get_ocr_engine(cfg: Config):
             _ENGINE = PaddleOCR(**_paddle_runtime_kwargs(cfg))
     except (RuntimeError, TypeError, ValueError) as exc:
         if not cfg.allow_runtime_fallback:
-            raise SystemExit(
+            raise PylexSetupError(
                 "The installed PaddleOCR/PaddleX build rejected the requested "
-                f"runtime configuration ({exc}). Use --allow-runtime-fallback "
+                f"runtime configuration ({exc}). Remove --no-runtime-fallback "
                 "to retry with the portable Paddle runtime."
             ) from exc
         log.warning("Optimized Paddle runtime unavailable (%s); retrying with paddle_dynamic.", exc)
@@ -306,6 +411,15 @@ def get_ocr_engine(cfg: Config):
         fallback_kwargs = _paddle_runtime_kwargs(fallback)
         with _quiet_backend_output():
             _ENGINE = PaddleOCR(**fallback_kwargs)
+    except Exception as exc:
+        if "model hosting platform" in str(exc).lower():
+            raise PylexSetupError(
+                "Pylex could not download its OCR models: no model host is reachable.\n"
+                "Allow network access to Hugging Face, ModelScope or AIStudio, pick one with "
+                "PADDLE_PDX_MODEL_SOURCE (huggingface, modelscope, aistudio, bos), or copy a "
+                "populated ~/.paddlex folder from a machine that already has the models."
+            ) from exc
+        raise
 
     _ENGINE_KEY = engine_key
     log.info("Engine ready in %.1fs", time.time() - t0)

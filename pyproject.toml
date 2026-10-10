@@ -29,6 +29,8 @@ keywords = [
     "paddleocr",
     "onnxruntime",
     "openvino",
+    "gpu",
+    "cuda",
 ]
 classifiers = [
     "Development Status :: 4 - Beta",
@@ -57,6 +59,31 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
+# --- Pick exactly ONE hardware profile. They are mutually exclusive: the ONNX Runtime
+# --- packages (onnxruntime, onnxruntime-gpu, onnxruntime-openvino) share one import name.
+# --- `pylex doctor` recommends the right one for your machine.
+cpu = [
+    "paddleocr>=3.0,<4",
+    "paddlepaddle>=3.0,<4",
+    "onnxruntime>=1.18",
+]
+intel = [
+    "paddleocr>=3.0,<4",
+    "paddlepaddle>=3.0,<4",
+    "onnxruntime-openvino>=1.24,<2",
+]
+# NVIDIA GPU. CUDA and cuDNN come from pip, so no system CUDA toolkit is needed.
+gpu = [
+    "paddleocr>=3.0,<4",
+    "paddlepaddle>=3.0,<4",
+    "onnxruntime-gpu[cuda,cudnn]>=1.27",
+]
+gpu-cu12 = [
+    "paddleocr>=3.0,<4",
+    "paddlepaddle>=3.0,<4",
+    "onnxruntime-gpu[cuda,cudnn]>=1.21,<1.27",
+]
+# --- Building blocks kept for backwards compatibility with earlier install commands.
 ocr = [
     "paddleocr>=3.0,<4",
     "paddlepaddle>=3.0,<4",
@@ -69,6 +96,7 @@ dev = [
     "build>=1.2",
     "twine>=5.0",
 ]
+docs = ["markdown>=3.5"]
 
 [project.urls]
 Homepage = "https://github.com/voltvirtuoso/pylex"

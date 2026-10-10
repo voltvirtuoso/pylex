@@ -8,7 +8,7 @@ import logging
 import os
 import time
 from collections.abc import Callable
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 
 import numpy as np
@@ -54,7 +54,7 @@ def check_dependencies() -> None:
         raise SystemExit(
             "Missing required package(s): "
             + ", ".join(missing)
-            + "\nInstall with: pip install pylex[ocr]"
+            + "\nReinstall the package: python -m pip install --upgrade pylex-ocr"
         )
 
 
@@ -94,6 +94,9 @@ class FileResult:
     ok: bool = False
     pages_processed: int = 0
     lines_added: int = 0
+    # 1-based pages whose OCR raised an error. They are kept unchanged (no text layer),
+    # so a result can be ok=True and still have failed pages: check this field.
+    failed_pages: list[int] = field(default_factory=list)
     error: str | None = None
     elapsed: float = 0.0
 
@@ -154,6 +157,7 @@ def process_pdf(
             items = ocr_image_tiled(engine, img_array, cfg)
         except Exception as e:  # noqa: BLE001 - preserve the page on OCR backend failures
             log.warning("  Page %d: OCR failed (%s), keeping page unchanged", page_num, e)
+            result.failed_pages.append(page_num)
             items = []
 
         if on_stage:
@@ -248,6 +252,7 @@ def process_image(
         )
     except Exception as e:  # noqa: BLE001 - produce an output even when OCR fails
         log.warning("  OCR failed (%s), producing an unsearchable page", e)
+        result.failed_pages.append(1)
         items = []
 
     if on_stage:
@@ -384,6 +389,7 @@ def resolve_output_path(
     output_arg: str | None,
     suffix: str,
     in_place: bool,
+    multiple_inputs: bool = False,
 ) -> Path:
     if in_place:
         return in_file
@@ -400,6 +406,8 @@ def resolve_output_path(
         out.is_dir()
         or output_arg.endswith(os.sep)
         or (base_input is not None and base_input.is_dir())
+        # Several inputs cannot share one output file, so -o must name a folder.
+        or multiple_inputs
     )
 
     if treat_as_dir:

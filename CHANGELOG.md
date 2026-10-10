@@ -7,6 +7,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- Hardware-matched install profiles: `[cpu]`, `[intel]`, `[gpu]` (CUDA 13) and `[gpu-cu12]`.
+- `pylex doctor` (and `pylex.doctor()`): detects CPU, NVIDIA GPU, TPU and installed runtimes, recommends an install, flags conflicting ONNX Runtime packages; `--verify-gpu` confirms CUDA really loads; `--install` runs the recommended commands.
+- `--device auto|cpu|gpu|gpu:N` and `Config(device=...)`; `--gpu` remains as a shortcut. Other Paddle accelerator types are passed through (untested).
+- `--font` accepts a Unicode `.ttf` path or a built-in CJK font for non-Latin searchable text.
+- Documentation: installation, full CLI and SDK references, how it works, troubleshooting, and a single-page docs site (`docs/index.html`).
+- `benchmarks/compare.py`: compares Pylex, OCRmyPDF + Tesseract and OCRmyPDF + the PaddleOCR plugin on text recall, text-layer alignment (including `/Rotate` pages), and speed.
+- `FileResult.failed_pages`; the CLI exits with status 1 when OCR failed on some pages instead of reporting plain success.
+- `pylex.PylexSetupError` replaces `SystemExit` for backend, device and model-download problems, so applications that embed Pylex can catch it.
+
+### Fixed
+- Install guidance now states only what is documented: ONNX Runtime's CUDA 13 / CUDA 12.8 requirements, and that TPUs are not in PaddleOCR's supported hardware list.
+- Unreachable model hosts produced a raw PaddleX traceback; there is now a clear message with the available workarounds.
+- An error message named a non-existent `--allow-runtime-fallback` flag.
+- README claimed other tools misplace text on rotated pages; OCRmyPDF with Tesseract does not (measured), so the claim was removed.
+- Error messages told users to run `pip install pylex[ocr]`, which installs an unrelated project.
+- Requesting a GPU without a CUDA-capable runtime now explains the fix and continues on the CPU (or exits with `--no-runtime-fallback`) instead of failing obscurely.
+- Non-Latin OCR text was written as placeholder glyphs in the searchable layer; a warning is now logged when the font cannot encode the text.
+- Several inputs with one `-o` name overwrote each other; `-o` is now treated as a folder when there are several inputs.
+
 ## [2.0.0] - 2026-08-28
 
 ### Changed

@@ -11,7 +11,7 @@ Please search existing issues first. For an OCR problem, include the Pylex versi
 ```bash
 git clone https://github.com/voltvirtuoso/pylex.git
 cd pylex
-python -m pip install -e ".[ocr,dev]"
+python -m pip install -e ".[cpu,dev]"
 pytest
 ruff check .
 ```

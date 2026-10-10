@@ -47,6 +47,12 @@ class Config:
     vertical_text_retry: bool = True
     vertical_text_aspect_ratio: float = 1.3
     vertical_text_retry_max_confidence: float = 0.8
+    # Compute device. None keeps the legacy behavior (use_gpu decides). Otherwise:
+    # "cpu", "gpu" / "cuda" (optionally ":N" for a device index), "auto" (GPU when a
+    # CUDA-capable runtime is installed, else CPU), or another PaddleOCR device type
+    # (xpu, npu, mlu, gcu, dcu, iluvatar_gpu, metax_gpu) for the Paddle runtimes.
+    device: str | None = None
+    # Legacy switch kept for compatibility; equivalent to device="gpu".
     use_gpu: bool = False
     # Dynamic inference does not use the static oneDNN path by default.
     disable_mkldnn: bool = True

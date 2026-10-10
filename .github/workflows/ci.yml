@@ -38,3 +38,11 @@ jobs:
         # Lint once per OS is redundant — only need it on one leg of the matrix.
         if: matrix.os == 'ubuntu-latest' && matrix.python-version == '3.12'
         run: ruff check .
+
+      - name: Check the docs site is up to date
+        if: matrix.os == 'ubuntu-latest' && matrix.python-version == '3.12'
+        run: python -m pip install markdown && python scripts/build_docs.py --check
+
+      - name: Verify the benchmark scoring
+        if: matrix.os == 'ubuntu-latest' && matrix.python-version == '3.12'
+        run: python benchmarks/compare.py --self-test

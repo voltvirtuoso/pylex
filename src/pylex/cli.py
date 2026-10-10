@@ -3,14 +3,17 @@
 from __future__ import annotations
 
 import argparse
+import json
 import logging
 import os
+import sys
 import time
 from pathlib import Path
 
-from pylex import __version__
+from pylex import __version__, runtime
 from pylex.config import ALL_EXTS, Config
-from pylex.engine import configure_cpu_threads, get_ocr_engine
+from pylex.engine import PylexSetupError, configure_cpu_threads, get_ocr_engine, resolve_device
+from pylex.overlay import resolve_font
 from pylex.pipeline import (
     FileResult,
     check_dependencies,
@@ -50,6 +53,8 @@ def build_arg_parser() -> argparse.ArgumentParser:
             "                                            # more text in crowded symbol clusters\n"
             "  pylex scans/ -r -xf '*_draft*' -xf 'backup/*'\n"
             "                                            # exclude by wildcard pattern\n"
+            "  pylex scan.pdf --device auto              # use the GPU when one is usable\n"
+            "  pylex doctor                              # check hardware, get the right install command\n"
         ),
     )
 
@@ -196,7 +201,18 @@ def build_arg_parser() -> argparse.ArgumentParser:
     ocr_group.add_argument(
         "--det-limit-side-len", type=int, default=8000, help="Max side length for text detection (default: 8000)."
     )
-    ocr_group.add_argument("--gpu", action="store_true", help="Run PaddleOCR on GPU instead of CPU.")
+    ocr_group.add_argument(
+        "--device",
+        default=None,
+        metavar="DEV",
+        help=(
+            "Compute device: auto, cpu, gpu, gpu:N (cuda is an alias of gpu), or a PaddleOCR "
+            "accelerator type (xpu, npu, mlu, gcu, dcu, ...) for the Paddle runtimes. 'auto' uses "
+            "a GPU when a CUDA-capable runtime is installed. Default: cpu. Run `pylex doctor` to "
+            "see what this machine supports."
+        ),
+    )
+    ocr_group.add_argument("--gpu", action="store_true", help="Shortcut for --device gpu.")
     ocr_group.add_argument(
         "--no-textline-orientation", action="store_true", help="Disable per-textline orientation classification."
     )
@@ -256,7 +272,16 @@ def build_arg_parser() -> argparse.ArgumentParser:
     )
 
     overlay_group = parser.add_argument_group("Overlay tuning (advanced)")
-    overlay_group.add_argument("--font", default="Helvetica", help="Invisible-layer font (default: Helvetica).")
+    overlay_group.add_argument(
+        "--font",
+        default="Helvetica",
+        help=(
+            "Font for the invisible text layer (default: Helvetica, which covers Latin-1 only). "
+            "For other scripts pass the path to a Unicode .ttf file (e.g. DejaVuSans.ttf for "
+            "Cyrillic/Greek) or a built-in CJK font: STSong-Light, MSung-Light, HeiseiMin-W3, "
+            "HeiseiKakuGo-W5, HYSMyeongJo-Medium, HYGothic-Medium."
+        ),
+    )
     overlay_group.add_argument(
         "--baseline-fraction",
         type=float,
@@ -358,6 +383,7 @@ def config_from_args(args: argparse.Namespace) -> Config:
         baseline_fraction=args.baseline_fraction,
         use_textline_orientation=not args.no_textline_orientation and not args.fast,
         vertical_text_retry=not args.no_vertical_text_retry and not args.fast,
+        device=args.device,
         use_gpu=args.gpu,
         disable_mkldnn=not args.enable_mkldnn,
         cpu_threads=args.cpu_threads,
@@ -382,7 +408,63 @@ def config_from_args(args: argparse.Namespace) -> Config:
     return cfg
 
 
+
+def doctor_main(argv: list[str]) -> int:
+    """`pylex doctor`: inspect the machine and recommend a runtime install."""
+    parser = argparse.ArgumentParser(
+        prog="pylex doctor",
+        description="Detect CPU/GPU/TPU hardware and installed runtimes, and recommend what to install.",
+    )
+    parser.add_argument("--json", action="store_true", help="Print the report as JSON.")
+    parser.add_argument(
+        "--verify-gpu",
+        action="store_true",
+        help="Create a tiny ONNX Runtime session to confirm CUDA really loads (needs onnxruntime-gpu).",
+    )
+    parser.add_argument(
+        "--install",
+        action="store_true",
+        help="Run the recommended pip commands in this Python environment (asks first).",
+    )
+    parser.add_argument("-y", "--yes", action="store_true", help="With --install, do not ask for confirmation.")
+    args = parser.parse_args(argv)
+
+    hw, rec = runtime.doctor(as_text=False)
+    gpu_check = runtime.verify_gpu() if args.verify_gpu else None
+    if args.json:
+        payload = {"hardware": hw.to_dict(), "recommendation": rec.to_dict()}
+        if gpu_check is not None:
+            payload["gpu_check"] = {"ok": gpu_check[0], "detail": gpu_check[1]}
+        print(json.dumps(payload, indent=2))
+    else:
+        print(runtime.format_report(hw, rec))
+        if gpu_check is not None:
+            print(f"GPU check : {'OK' if gpu_check[0] else 'FAILED'} - {gpu_check[1]}")
+    if args.install:
+        if rec.ready:
+            print("Nothing to install: the recommended profile is already in place.")
+            return 0
+        return runtime.run_install(rec, assume_yes=args.yes)
+    if gpu_check is not None and not gpu_check[0]:
+        return 1
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
+    try:
+        return _main(argv)
+    except PylexSetupError as e:
+        print(f"pylex: error: {e}", file=sys.stderr)
+        return 1
+
+
+def _main(argv: list[str] | None = None) -> int:
+    if argv is None:
+        argv = sys.argv[1:]
+    # `pylex doctor` is a subcommand; a file literally named "doctor" can be passed as ./doctor.
+    if argv and argv[0] == "doctor":
+        return doctor_main(argv[1:])
+
     parser = build_arg_parser()
     args = parser.parse_args(argv)
 
@@ -406,12 +488,27 @@ def main(argv: list[str] | None = None) -> int:
         parser.error("--enable-hpi and --inference-engine are mutually exclusive; use --inference-engine auto.")
     if args.hpi_backend and not args.enable_hpi:
         parser.error("--hpi-backend requires --enable-hpi.")
-    if args.jobs > 1 and args.gpu:
+    if args.gpu and args.device and args.device.strip().lower() not in {"gpu", "cuda"} and not args.device.lower().startswith(("gpu:", "cuda:")):
+        parser.error(f"--gpu conflicts with --device {args.device}; use one of them.")
+    try:
+        probe = Config(device=args.device, use_gpu=args.gpu)
+        device_kind, _ = resolve_device(probe)
+    except ValueError as e:
+        parser.error(str(e))
+    try:
+        resolve_font(args.font)
+    except ValueError as e:
+        parser.error(str(e))
+    if device_kind == "gpu" and args.inference_engine == "openvino":
+        parser.error("--inference-engine openvino runs on the CPU; drop --gpu/--device or choose another engine.")
+    if args.jobs > 1 and device_kind != "cpu":
         log.warning(
-            "--jobs %d with --gpu: multiple worker processes will share the same GPU, "
+            "--jobs %d on a %s device: multiple worker processes will share the same accelerator, "
             "which can contend for memory rather than speed things up. "
-            "Consider --jobs 1 with --gpu, or --jobs N without --gpu.",
+            "Consider --jobs 1 with --device %s, or --jobs N on the CPU.",
             args.jobs,
+            device_kind,
+            device_kind,
         )
     if args.tile_size < 0:
         parser.error("--tile-size must be >= 0 (0 disables tiling).")
@@ -449,7 +546,9 @@ def main(argv: list[str] | None = None) -> int:
         if in_file.suffix.lower() not in ALL_EXTS:
             log.warning("Skipping unsupported file: %s", in_file)
             continue
-        out_file = resolve_output_path(in_file, base_input, args.output, args.suffix, args.in_place)
+        out_file = resolve_output_path(
+            in_file, base_input, args.output, args.suffix, args.in_place, multiple_inputs=len(input_files) > 1
+        )
         jobs.append((in_file, out_file))
 
     if args.dry_run:
@@ -524,7 +623,7 @@ def main(argv: list[str] | None = None) -> int:
         configure_cpu_threads(cfg.cpu_threads)
         bar = ProgressBar(len(filtered_jobs), label="OCR", enabled=not args.quiet)
         bar.start_spinner(
-            f"Loading {cfg.ocr_version} {cfg.model_size} model ({cfg.inference_engine})"
+            f"Loading {cfg.ocr_version} {cfg.model_size} model ({cfg.inference_engine}, device {args.device or ('gpu' if args.gpu else 'cpu')})"
         )
         engine_started = time.perf_counter()
         try:
@@ -593,6 +692,7 @@ def main(argv: list[str] | None = None) -> int:
 
     ok = sum(1 for r in results if r.ok)
     failed = [r for r in results if not r.ok]
+    partial = [r for r in results if r.ok and r.failed_pages]
 
     if not args.quiet:
         print(f"\nDone: {ok}/{len(results)} succeeded.")
@@ -601,6 +701,11 @@ def main(argv: list[str] | None = None) -> int:
             print(f"{len(failed)} file(s) failed:")
         for r in failed:
             log.error("  - %s: %s", r.input_path, r.error)
+        return 1
+    if partial:
+        # The files were written, but some pages have no text layer: do not report plain success.
+        for r in partial:
+            log.error("  - %s: OCR failed on page(s) %s; those pages were kept without text", r.input_path, r.failed_pages)
         return 1
 
     return 0

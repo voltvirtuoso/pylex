@@ -15,17 +15,25 @@ Use Pylex when you need to add an invisible searchable text layer to a scanned P
 
 ### Install
 
-The distribution name is `pylex-ocr` to avoid confusion with an unrelated legacy PyPI project that already uses the name `pylex`. The installed command and Python import remain `pylex`.
+The distribution name is `pylex-ocr` (the name `pylex` on PyPI is an unrelated project). The command and import are `pylex`. Pick one profile for your hardware:
 
 ```bash
-python -m pip install "pylex-ocr[ocr]"
+python -m pip install "pylex-ocr[cpu]"        # any CPU (recommended default)
+python -m pip install "pylex-ocr[gpu]"        # NVIDIA GPU, driver reporting CUDA 13+
+python -m pip install "pylex-ocr[gpu-cu12]"   # NVIDIA GPU, driver reporting CUDA 12.x
+python -m pip install "pylex-ocr[intel]"      # Intel CPU with OpenVINO
 ```
 
-For development or tests without the OCR backend:
+Not sure? Install the core and let Pylex choose:
 
 ```bash
-python -m pip install -e ".[dev]"
+python -m pip install pylex-ocr
+pylex doctor --install
 ```
+
+Profiles are mutually exclusive. Google TPUs are not supported. Details: [docs/installation.md](docs/installation.md). Before a PyPI release, use `pip install "pylex-ocr[cpu] @ git+https://github.com/voltvirtuoso/pylex.git"`.
+
+For development without an OCR backend: `python -m pip install -e ".[dev]"`.
 
 ### Create a searchable PDF
 
@@ -41,13 +49,11 @@ pylex page.png -o searchable.pdf       # image input becomes a searchable PDF
 pylex scans/ -r -o out/ -j 4
 ```
 
-Pylex processes independent files in parallel. Pages inside one PDF remain sequential. Use `-j 1` with `--gpu`; multiple GPU workers can compete for the same device memory.
+Pylex processes independent files in parallel. Pages inside one PDF remain sequential. Use `-j 1` with a GPU; multiple GPU workers can compete for the same device memory.
 
 ## Why Pylex
 
-Many OCR-to-PDF workflows render a page, run OCR, and place text over the original image without carefully reconciling display orientation and PDF coordinates. On rotated pages, this can make the invisible text layer appear in the wrong location.
-
-Pylex handles this by rendering the page in viewer orientation, transferring the PDF page rotation into the content stream before merging the OCR overlay, and anchoring each OCR line at the start of its detected polygon. The original visible page is preserved while the output becomes searchable and selectable.
+A searchable-PDF tool has to reconcile the page's display orientation (`/Rotate`) with PDF coordinates, or the invisible text layer lands in the wrong place. Pylex does this by rendering the page in viewer orientation, transferring the PDF page rotation into the content stream before merging the OCR overlay, and anchoring each OCR line at the start of its detected polygon. The original visible page is preserved while the output becomes searchable and selectable.
 
 For large or crowded documents, Pylex uses overlapping tiles at local resolution by default. This helps recover small labels that can disappear when an entire page is resized before detection.
 
@@ -99,22 +105,16 @@ The automatic runtime prefers OpenVINO when the OpenVINO-enabled ONNX Runtime pa
 
 ## Installation options
 
-The `[ocr]` extra installs PaddleOCR and PaddlePaddle. The optional runtime extras are useful for explicit benchmarking or deployment choices:
+See the full guide in [docs/installation.md](docs/installation.md). In short: one of `[cpu]`, `[intel]`, `[gpu]`, `[gpu-cu12]`; `pylex doctor` recommends one and `pylex doctor --verify-gpu` confirms the GPU really loads. The older `[ocr]`, `[onnx]` and `[openvino]` extras still work as building blocks.
 
-```bash
-python -m pip install "pylex-ocr[ocr]"
-python -m pip install "pylex-ocr[ocr,onnx]"
-python -m pip install "pylex-ocr[ocr,openvino]"
-```
-
-On Intel CPUs, compare OpenVINO and standard ONNX Runtime on the target machine rather than assuming one is always faster. On Windows, use the native ONNX/OpenVINO packages instead of PaddleOCR’s Linux-oriented HPI dependency installer.
+On Intel CPUs, compare `[intel]` (OpenVINO) with `[cpu]` on your own documents rather than assuming one is faster.
 
 From source:
 
 ```bash
 git clone https://github.com/voltvirtuoso/pylex.git
 cd pylex
-python -m pip install -e ".[ocr,dev]"
+python -m pip install -e ".[cpu,dev]"
 ```
 
 ## Python API
@@ -124,7 +124,7 @@ Pylex returns recognized regions with text, confidence, and polygons in the orig
 ```python
 from pylex import Config, create_engine, extract_text
 
-config = Config(inference_engine="auto", model_size="small")
+config = Config(inference_engine="auto", model_size="small")  # Config() defaults to small; the CLI defaults to medium
 engine = create_engine(config)  # Reuse this engine for multiple images.
 regions = extract_text("page.png", config=config, engine=engine)
 
@@ -165,13 +165,13 @@ The main options include input/output paths, recursive folder processing, in-pla
 
 | Workload | Recommended starting point | Trade-off |
 |---|---|---|
-| General CPU OCR | Default PP-OCRv6 small with automatic runtime | Chooses an available runtime automatically |
+| General CPU OCR | CLI default PP-OCRv6 medium (`--model-size small` is faster) with automatic runtime | Chooses an available runtime automatically |
 | Small or medium raster image | Default adaptive full-page path | Avoids unnecessary tiled passes |
 | Dense or large document | Default tiled mode | More passes, but better local resolution |
 | Higher recognition accuracy | `--model-size medium` | More CPU time and memory |
 | Simple low-latency pass | `--fast` | Less tolerant of dense or rotated layouts |
 | Many independent files | `-j N` | Each worker owns an OCR engine |
-| NVIDIA GPU | `--gpu -j 1` | Requires a compatible Paddle GPU install |
+| NVIDIA GPU | `--device gpu -j 1` (or `--device auto`) | Needs a `[gpu]` or `[gpu-cu12]` install |
 
 Benchmarks are machine- and document-dependent. When reporting performance, include the CPU/GPU, operating system, Python version, model, runtime, language, input resolution, and document type.
 
@@ -184,7 +184,7 @@ Pylex is intentionally domain-neutral. It can process forms, receipts, screensho
 ## Development
 
 ```bash
-python -m pip install -e ".[ocr,dev]"
+python -m pip install -e ".[cpu,dev]"
 pytest
 ruff check .
 ```
@@ -193,6 +193,8 @@ Please open an issue with the Pylex version, Python version, operating system, i
 
 ## Project links
 
+- [Documentation site](docs/index.html) (open locally, or via GitHub Pages)
+- [Installation (CPU, GPU, TPU)](docs/installation.md)
 - [Quickstart](docs/quickstart.md)
 - [CLI reference](docs/cli.md)
 - [Python API guide](docs/python-api.md)
