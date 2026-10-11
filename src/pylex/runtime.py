@@ -26,6 +26,16 @@ from collections.abc import Callable
 from dataclasses import asdict, dataclass, field
 
 DISTRIBUTION = "pylex-ocr"
+GITHUB_URL = "https://github.com/voltvirtuoso/pylex.git"
+# Flip to True once the package is on PyPI: every install command Pylex prints then switches
+# from the GitHub form to the short requirement `pylex-ocr[cpu]`.
+PUBLISHED_ON_PYPI = False
+
+
+def install_spec(extra: str | None = None) -> str:
+    """The requirement string to pass to pip, e.g. ``pylex-ocr[cpu] @ git+https://...``."""
+    name = f"{DISTRIBUTION}[{extra}]" if extra else DISTRIBUTION
+    return name if PUBLISHED_ON_PYPI else f"{name} @ git+{GITHUB_URL}"
 
 # Every package that provides the ``onnxruntime`` import name. Installing more
 # than one of them corrupts the shared files, so ``doctor`` flags it.
@@ -266,7 +276,7 @@ def recommend_install(report: HardwareReport | None = None) -> Recommendation:
         profile = "cpu"
         if hw.is_intel_cpu:
             alternatives.append(
-                'Intel CPU: also try pip install "pylex-ocr[intel]" (OpenVINO) and benchmark it '
+                f'Intel CPU: also try pip install "{install_spec("intel")}" (OpenVINO) and benchmark it '
                 "against [cpu] on your documents. It is not always faster."
             )
 
@@ -288,12 +298,14 @@ def recommend_install(report: HardwareReport | None = None) -> Recommendation:
         )
 
     extra = profile
-    commands = [_pip("install", f'"{DISTRIBUTION}[{extra}]"')]
+    commands = [_pip("install", f'"{install_spec(extra)}"')]
 
     conflicts = _conflicting_onnx(hw.installed)
-    wanted_ort = {"cpu": "onnxruntime", "intel": "onnxruntime-openvino"}.get(profile, "onnxruntime-gpu")
-    wrong = [name for name in conflicts if name != wanted_ort]
-    if wrong:
+    # On CPU hardware either the plain or the OpenVINO build is a valid choice; on an NVIDIA GPU
+    # only onnxruntime-gpu is. More than one ONNX Runtime package is always a conflict.
+    acceptable = {"onnxruntime", "onnxruntime-openvino"} if profile in {"cpu", "intel"} else {"onnxruntime-gpu"}
+    wrong = [name for name in conflicts if name not in acceptable]
+    if wrong or len(conflicts) > 1:
         warnings.append(
             "Conflicting ONNX Runtime packages are installed: "
             + ", ".join(sorted(conflicts))
@@ -308,8 +320,9 @@ def recommend_install(report: HardwareReport | None = None) -> Recommendation:
 
     ready = (
         "paddleocr" in hw.installed
+        and bool(conflicts)
         and not wrong
-        and wanted_ort in hw.installed
+        and len(conflicts) == 1
         and (profile not in {"gpu", "gpu-cu12"} or "CUDAExecutionProvider" in hw.onnxruntime_providers)
     )
     return Recommendation(
@@ -462,7 +475,7 @@ def verify_gpu(provider: str = "CUDAExecutionProvider") -> tuple[bool, str]:
         if provider not in ort.get_available_providers():
             return False, (
                 f"{provider} is not available (found: {', '.join(ort.get_available_providers())}). "
-                'Install the GPU build: pip install "pylex-ocr[gpu]" and uninstall plain onnxruntime.'
+                f'Install the GPU build: pip install "{install_spec("gpu")}" and uninstall plain onnxruntime.'
             )
         preload = getattr(ort, "preload_dlls", None)
         if preload is not None:

@@ -4,17 +4,17 @@ Start with `pylex doctor`. It lists the hardware found, the packages installed, 
 
 ## "paddleocr is not installed"
 
-No OCR runtime is installed. The message includes the command for your machine; or run `pylex doctor --install`. Do not use `pip install pylex` (an unrelated project).
+No OCR runtime is installed. The message includes the command for your machine; or run `pylex doctor --install`. Do not install a package called plain `pylex` (an unrelated project).
 
-## `pip` cannot find `pylex-ocr`
+## `pip` says "No matching distribution found" for `pylex-ocr`
 
-If no release is on PyPI yet, install from GitHub: `pip install "pylex-ocr[cpu] @ git+https://github.com/voltvirtuoso/pylex.git"`.
+Pylex is not on PyPI yet, so a plain `pylex-ocr` requirement cannot be found. Install from GitHub instead: `pip install "pylex-ocr[cpu] @ git+https://github.com/voltvirtuoso/pylex.git"`.
 
 ## I asked for the GPU but it runs on the CPU
 
 Pylex prints a warning saying why. Common causes:
 
-- **Plain `onnxruntime` is installed.** It has no CUDA. Run `pip uninstall -y onnxruntime`, then `pip install "pylex-ocr[gpu]"`.
+- **Plain `onnxruntime` is installed.** It has no CUDA. Run `pip uninstall -y onnxruntime`, then `pip install "pylex-ocr[gpu] @ git+https://github.com/voltvirtuoso/pylex.git"`.
 - **Two ONNX Runtime packages are installed.** `doctor` flags this. Uninstall all of `onnxruntime`, `onnxruntime-gpu`, `onnxruntime-openvino`, then install one profile.
 - **CUDA libraries did not load.** Run `pylex doctor --verify-gpu`. If it says the provider is listed but did not load, your driver is probably too old for the build. Check `nvidia-smi`: CUDA 13 needs `[gpu]`, CUDA 12 needs `[gpu-cu12]`.
 - **No NVIDIA GPU.** Intel, AMD and Apple hardware run on the CPU in Pylex, and TPUs are not supported. See [Installation](installation.md).

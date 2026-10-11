@@ -3,58 +3,102 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Pylex documentation</title>
-<meta name="description" content="Pylex: Python OCR and searchable PDFs. Python SDK and CLI documentation.">
+<title>Pylex documentation: Python OCR for searchable PDFs</title>
+<meta name="description" content="Pylex is a Python OCR library and command-line tool that makes scanned PDFs searchable and extracts text from images. Runs on CPU and NVIDIA GPU. Python SDK and CLI documentation.">
+<meta name="robots" content="index,follow,max-snippet:-1">
+<meta name="theme-color" content="#210100">
+<link rel="canonical" href="https://voltvirtuoso.github.io/pylex/">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%23210100'/%3E%3Crect x='6' y='6' width='8' height='20' fill='%238c0902'/%3E%3Crect x='14' y='6' width='12' height='8' fill='%23e0c58f'/%3E%3C/svg%3E">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Pylex">
+<meta property="og:title" content="Pylex: Python OCR for searchable PDFs">
+<meta property="og:description" content="Make scanned PDFs searchable and extract text from images. Python SDK and CLI. CPU and NVIDIA GPU.">
+<meta property="og:url" content="https://voltvirtuoso.github.io/pylex/">
+<meta property="og:image" content="https://voltvirtuoso.github.io/pylex/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Pylex: Python OCR for searchable PDFs">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Pylex: Python OCR for searchable PDFs">
+<meta name="twitter:description" content="Make scanned PDFs searchable and extract text from images. Python SDK and CLI. CPU and NVIDIA GPU.">
+<meta name="twitter:image" content="https://voltvirtuoso.github.io/pylex/og.png">
+<script type="application/ld+json">
+{
+ "@context": "https://schema.org",
+ "@type": "SoftwareSourceCode",
+ "name": "Pylex",
+ "description": "Pylex is a Python OCR library and command-line tool that makes scanned PDFs searchable and extracts text from images. Runs on CPU and NVIDIA GPU. Python SDK and CLI documentation.",
+ "url": "https://voltvirtuoso.github.io/pylex/",
+ "codeRepository": "https://github.com/voltvirtuoso/pylex",
+ "programmingLanguage": "Python",
+ "license": "https://opensource.org/licenses/MIT",
+ "author": {
+  "@type": "Person",
+  "name": "Haroon Raza"
+ }
+}
+</script>
 <style>
-:root{--bg:#f6f8fb;--ink:#1b2430;--mute:#5a6675;--line:#d8dee8;--nav:#0e2a47;--navink:#c9d6e6;--red:#d0342c;--link:#1d5fa8;--code:#e9eef5;--pre:#0f1b2b;--preink:#dbe6f3;
+:root{--bg:#f5f0e9;--ink:#210100;--mute:#6a5750;--line:#d6c8ad;--nav:#210100;--navink:#eadfcf;--navmute:#c9b58f;--navline:rgba(224,197,143,.35);--red:#8c0902;--tan:#e0c58f;--acc:#8c0902;--link:#8c0902;--code:#ece3d1;--pre:#210100;--preink:#f5f0e9;
 --ui:"Avenir Next","Segoe UI",system-ui,-apple-system,sans-serif;--serif:Charter,"Iowan Old Style","Palatino Linotype",Georgia,serif;--mono:ui-monospace,"SF Mono",Menlo,Consolas,monospace}
 :root:not([data-theme=light]){color-scheme:light dark}
-@media(prefers-color-scheme:dark){:root:not([data-theme=light]){--bg:#0f1620;--ink:#e3e9f1;--mute:#98a5b6;--line:#26323f;--nav:#0a1a2d;--link:#6fb0f0;--code:#1a2636}}
-:root[data-theme=dark]{--bg:#0f1620;--ink:#e3e9f1;--mute:#98a5b6;--line:#26323f;--nav:#0a1a2d;--link:#6fb0f0;--code:#1a2636}
+@media(prefers-color-scheme:dark){:root:not([data-theme=light]){--bg:#1b0100;--ink:#f5f0e9;--mute:#bfae9c;--line:#4a2a22;--nav:#120000;--acc:#e0c58f;--link:#e0c58f;--code:#2e0f0b;--pre:#120000}}
+:root[data-theme=dark]{--bg:#1b0100;--ink:#f5f0e9;--mute:#bfae9c;--line:#4a2a22;--nav:#120000;--acc:#e0c58f;--link:#e0c58f;--code:#2e0f0b;--pre:#120000}
+::selection{background:var(--tan);color:#210100}
 *{box-sizing:border-box}html{scroll-behavior:smooth;scroll-padding-top:20px}
 body{margin:0;background:var(--bg);color:var(--ink);font:17px/1.7 var(--serif);padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
 @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
-a{color:var(--link)}a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid var(--red);outline-offset:2px}
+a{color:var(--link);text-underline-offset:3px}a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid var(--acc);outline-offset:2px}
 #side{position:fixed;inset:0 auto 0 0;width:292px;background:var(--nav);color:var(--navink);font:14px/1.4 var(--ui);overflow-y:auto;padding:22px 16px 40px;
-background-image:linear-gradient(rgba(255,255,255,.035) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.035) 1px,transparent 1px);background-size:24px 24px}
-#side .brand{font:700 22px var(--ui);color:#fff;text-decoration:none;display:block;margin-bottom:2px}#side .tag{color:#8fa6c2;font-size:13px;margin-bottom:16px}
-.seg{display:flex;border:1px solid #38577d;border-radius:6px;overflow:hidden;margin-bottom:12px}
-.seg button{flex:1;background:none;border:0;color:var(--navink);padding:7px 4px;font:inherit;cursor:pointer}.seg button[aria-pressed=true]{background:#fff;color:var(--nav);font-weight:600}
-#q{width:100%;padding:8px 10px;border-radius:6px;border:1px solid #38577d;background:#0a2038;color:#fff;font:inherit;margin-bottom:14px}#q::placeholder{color:#7f97b4}
-#side h4{margin:18px 0 4px;font:600 12px var(--ui);color:#8fa6c2;letter-spacing:.02em}
-#side a.d,#side a.s{display:block;color:var(--navink);text-decoration:none;padding:5px 10px 5px 12px;border-left:3px solid transparent;border-radius:0 4px 4px 0}
-#side a.d{font-weight:600;color:#fff}#side a.s{padding-left:26px;font-size:13px;color:#a9bbd2;display:none}
-#side .cur a.s{display:block}#side a.on{border-left-color:var(--red);background:rgba(255,255,255,.07)}#side a:hover{background:rgba(255,255,255,.1)}
+background-image:linear-gradient(rgba(224,197,143,.05) 1px,transparent 1px),linear-gradient(90deg,rgba(224,197,143,.05) 1px,transparent 1px);background-size:24px 24px}
+#side .brand{font:700 22px var(--ui);color:#f5f0e9;text-decoration:none;display:block;margin-bottom:2px}#side .tag{color:var(--navmute);font-size:13px;margin-bottom:16px}
+.seg{display:grid;grid-template-columns:repeat(3,1fr);border:1px solid var(--navline);margin-bottom:12px}
+.seg button{background:none;border:0;border-left:1px solid var(--navline);color:var(--navink);height:38px;padding:0 4px;font:13px/1 var(--ui);white-space:nowrap;cursor:pointer;border-bottom:3px solid transparent}.seg button:first-child{border-left:0}.seg button:hover{background:rgba(224,197,143,.12)}.seg button[aria-pressed=true]{background:#f5f0e9;color:var(--nav);border-bottom-color:var(--red)}
+#q{width:100%;padding:8px 10px;border:1px solid var(--navline);background:#2f0b08;color:#f5f0e9;font:inherit;margin-bottom:14px}#q::placeholder{color:#a89377}
+#side h4{margin:18px 0 4px;font:600 12px var(--ui);color:var(--navmute);letter-spacing:.02em}
+#side a.d,#side a.s{display:block;color:var(--navink);text-decoration:none;padding:5px 10px 5px 12px;border-left:3px solid transparent;}
+#side a.d{font-weight:600;color:#f5f0e9}#side a.s{padding-left:26px;font-size:13px;color:var(--navmute);display:none}
+#side .cur a.s{display:block}#side a.on{border-left-color:var(--tan);background:rgba(224,197,143,.10)}#side a:hover{background:rgba(224,197,143,.14)}
 #side .hide,section.hide{display:none}
 #top{display:none}
 main{margin-left:292px;padding:28px 40px 120px}
 section{max-width:76ch;margin:0 auto;padding-bottom:56px;margin-bottom:56px;border-bottom:1px solid var(--line)}
 section:last-child{border:0}
-.kind{font:600 13px var(--ui);color:var(--red);margin-bottom:4px}
-h1,h2,h3{font-family:var(--ui);line-height:1.2;letter-spacing:-.01em}h1{font-size:38px;margin:.1em 0 .5em}h2{font-size:26px;margin:2em 0 .6em;padding-top:.3em;border-top:1px solid var(--line)}h3{font-size:20px;margin:1.6em 0 .4em}
+.kind{display:inline-block;font:600 12px var(--ui);letter-spacing:.04em;text-transform:uppercase;background:var(--red);color:#f5f0e9;padding:3px 9px;margin-bottom:10px}
+h1,h2,h3{font-family:var(--ui);line-height:1.2;letter-spacing:-.01em}h1{font-size:38px;margin:.1em 0 .6em;padding-bottom:.25em;border-bottom:3px solid var(--ink)}h2{font-size:26px;margin:2em 0 .6em;padding-top:.3em;border-top:1px solid var(--line)}h3{font-size:20px;margin:1.6em 0 .4em}
 h1+p{font-size:19px;color:var(--mute)}
-p,li{hyphens:manual}code{font:.86em var(--mono);background:var(--code);padding:.12em .35em;border-radius:4px}
-.pw{position:relative}pre{background:var(--pre);color:var(--preink);padding:16px 18px;border-radius:8px;overflow-x:auto;font:14px/1.55 var(--mono);margin:1.1em 0}pre code{background:none;padding:0;font-size:inherit}
-.cp{position:absolute;top:8px;right:8px;background:#22344d;color:#dbe6f3;border:1px solid #38577d;border-radius:5px;font:12px var(--ui);padding:3px 9px;cursor:pointer}
+p,li{hyphens:manual}code{font:.86em var(--mono);background:var(--code);padding:.12em .35em;}
+.pw{position:relative}pre{background:var(--pre);color:var(--preink);border-left:4px solid var(--tan);padding:16px 18px;overflow-x:auto;font:14px/1.55 var(--mono);margin:1.1em 0}pre code{background:none;padding:0;font-size:inherit}
+.ib,.cp{display:inline-flex;align-items:center;justify-content:center;background:none;border:1px solid var(--navline);color:#f5f0e9;cursor:pointer;text-decoration:none;position:relative;padding:0}
+.ib{width:36px;height:36px}.cp{position:absolute;top:8px;right:8px;width:32px;height:32px;background:#3a1410}
+.ib:hover,.cp:hover{background:rgba(224,197,143,.16);border-color:var(--tan)}
+.ib svg,.cp svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:square;stroke-linejoin:miter;pointer-events:none}
+[data-tip]:hover::after,[data-tip]:focus-visible::after{content:attr(data-tip);position:absolute;z-index:20;white-space:nowrap;background:var(--tan);color:#210100;font:600 12px/1 var(--ui);padding:6px 9px;pointer-events:none}
+[data-tip]:not([data-pos]):hover::after,[data-pos=bottom]:hover::after{top:calc(100% + 6px);left:50%;transform:translateX(-50%)}
+[data-pos=right]:hover::after,[data-pos=right]:focus-visible::after{left:calc(100% + 6px);top:50%;transform:translateY(-50%)}
+[data-pos=left]:hover::after,[data-pos=left]:focus-visible::after{right:calc(100% + 6px);top:50%;transform:translateY(-50%)}
+[data-pos=top]:hover::after,[data-pos=top]:focus-visible::after{bottom:calc(100% + 6px);left:0}
+.foot{display:flex;align-items:center;justify-content:space-between;margin-top:22px;color:var(--navmute);font:13px var(--ui)}.foot .ics{display:flex;gap:6px}
+#close{display:none;position:absolute;top:12px;right:12px}
 .tw{overflow-x:auto;margin:1.2em 0}table{border-collapse:collapse;font:15px/1.45 var(--ui);min-width:100%}th,td{border-bottom:1px solid var(--line);padding:8px 12px;text-align:left;vertical-align:top}th{border-bottom:2px solid var(--ink)}
-blockquote{margin:1.2em 0;padding:.1em 1.1em;border-left:4px solid var(--red);background:var(--code);border-radius:0 6px 6px 0}
-#pick{font:15px var(--ui);border:1px solid var(--line);border-left:4px solid var(--red);background:var(--code);border-radius:6px;padding:14px 16px;margin:1.4em 0}
-#pick label{font-weight:600;display:block;margin-bottom:6px}#pick select{font:inherit;padding:7px;border-radius:5px;border:1px solid var(--line);background:var(--bg);color:var(--ink);max-width:100%}#pick .n{color:var(--mute);margin:8px 0 0}
+blockquote{margin:1.2em 0;padding:.1em 1.1em;border-left:4px solid var(--acc);background:var(--code);}
+#pick{font:15px var(--ui);border:1px solid var(--line);border-left:4px solid var(--acc);background:var(--code);padding:14px 16px;margin:1.4em 0}
+#pick label{font-weight:600;display:block;margin-bottom:6px}#pick select{font:inherit;padding:7px;border:1px solid var(--line);background:var(--bg);color:var(--ink);max-width:100%}#pick .n{color:var(--mute);margin:8px 0 0}
 #pick pre{margin:10px 0 0}
-@media(max-width:860px){#side{transform:translateX(-100%);transition:transform .2s;z-index:5;width:min(88vw,320px)}#side.open{transform:none}
-#top{display:flex;position:sticky;top:env(safe-area-inset-top,0px);z-index:4;align-items:center;gap:12px;background:var(--nav);color:#fff;font:600 16px var(--ui);padding:10px 14px}#top button{background:none;border:1px solid #38577d;color:#fff;border-radius:6px;padding:5px 10px;font:inherit;cursor:pointer}
+@media(max-width:860px){#close{display:inline-flex}#side{transform:translateX(-100%);transition:transform .2s;z-index:5;width:min(88vw,320px)}#side.open{transform:none}
+#top{display:flex;position:sticky;top:env(safe-area-inset-top,0px);z-index:4;align-items:center;gap:12px;background:var(--nav);color:#f5f0e9;font:600 16px var(--ui);padding:10px 14px}
 main{margin:0;padding:20px 16px 90px}h1{font-size:30px}}
 </style>
 </head>
 <body>
-<div id="top"><button id="menu" aria-label="Open navigation" aria-expanded="false">Menu</button>Pylex docs</div>
+<div id="top"><button class="ib" id="menu" aria-label="Menu" aria-expanded="false" data-tip="Menu" data-pos="right"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18M3 12h18M3 18h18"/></svg></button>Pylex docs</div>
 <nav id="side" aria-label="Documentation">
-<a class="brand" href="#overview">Pylex</a><div class="tag">Python OCR and searchable PDFs</div>
+<button class="ib" id="close" aria-label="Close menu" data-tip="Close" data-pos="left"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 5l14 14M19 5L5 19"/></svg></button><a class="brand" href="#overview">Pylex</a><div class="tag">Python OCR and searchable PDFs</div>
 <div class="seg" role="group" aria-label="Show documentation for"><button data-k="all" aria-pressed="true">All</button><button data-k="sdk" aria-pressed="false">Python SDK</button><button data-k="cli" aria-pressed="false">CLI</button></div>
 <input id="q" type="search" placeholder="Filter pages and headings" aria-label="Filter navigation">
 <h4>Start</h4>
 <div class="grp" data-kind="all"><a class="d" href="#overview">Overview</a><a class="s" href="#overview-two-ways-to-use-it">Two ways to use it</a><a class="s" href="#overview-sixty-seconds">Sixty seconds</a><a class="s" href="#overview-when-to-choose-something-else">When to choose something else</a><a class="s" href="#overview-where-to-go">Where to go</a></div>
-<div class="grp" data-kind="all"><a class="d" href="#installation">Installation</a><a class="s" href="#installation-the-fastest-path-let-pylex-choose">The fastest path: let Pylex choose</a><a class="s" href="#installation-pick-one-profile">Pick one profile</a><a class="s" href="#installation-installing-from-github">Installing from GitHub</a><a class="s" href="#installation-use-a-virtual-environment">Use a virtual environment</a><a class="s" href="#installation-paddle-gpu-build-alternative-to-onnx-runtime">Paddle GPU build (alternative to ONNX Runtime)</a><a class="s" href="#installation-other-accelerators">Other accelerators</a><a class="s" href="#installation-first-run-models-are-downloaded">First run: models are downloaded</a><a class="s" href="#installation-switching-profiles">Switching profiles</a><a class="s" href="#installation-check-the-installation">Check the installation</a></div>
+<div class="grp" data-kind="all"><a class="d" href="#installation">Installation</a><a class="s" href="#installation-pick-one-profile">Pick one profile</a><a class="s" href="#installation-not-sure-let-pylex-choose">Not sure? Let Pylex choose</a><a class="s" href="#installation-installing-from-a-local-build">Installing from a local build</a><a class="s" href="#installation-use-a-virtual-environment">Use a virtual environment</a><a class="s" href="#installation-paddle-gpu-build-alternative-to-onnx-runtime">Paddle GPU build (alternative to ONNX Runtime)</a><a class="s" href="#installation-other-accelerators">Other accelerators</a><a class="s" href="#installation-first-run-models-are-downloaded">First run: models are downloaded</a><a class="s" href="#installation-switching-profiles">Switching profiles</a><a class="s" href="#installation-check-the-installation">Check the installation</a></div>
 <div class="grp" data-kind="all"><a class="d" href="#quickstart">Quickstart</a><a class="s" href="#quickstart-command-line">Command line</a><a class="s" href="#quickstart-python">Python</a><a class="s" href="#quickstart-check-the-result">Check the result</a><a class="s" href="#quickstart-next">Next</a></div>
 <h4>Python SDK</h4>
 <div class="grp" data-kind="sdk"><a class="d" href="#python-api">Python SDK reference</a><a class="s" href="#python-api-the-three-objects-you-need">The three objects you need</a><a class="s" href="#python-api-extract_text">extract_text</a><a class="s" href="#python-api-create_searchable_document">create_searchable_document</a><a class="s" href="#python-api-callbacks">Callbacks</a><a class="s" href="#python-api-lower-level-functions">Lower-level functions</a><a class="s" href="#python-api-gpu-in-the-sdk">GPU in the SDK</a><a class="s" href="#python-api-recipes">Recipes</a><a class="s" href="#python-api-errors">Errors</a><a class="s" href="#python-api-config-reference">Config reference</a></div>
@@ -65,9 +109,9 @@ main{margin:0;padding:20px 16px 90px}h1{font-size:30px}}
 <div class="grp" data-kind="all"><a class="d" href="#accuracy-and-benchmarks">Accuracy and benchmarks</a><a class="s" href="#accuracy-and-benchmarks-choosing-settings">Choosing settings</a><a class="s" href="#accuracy-and-benchmarks-measurements-recorded-by-the-project">Measurements recorded by the project</a><a class="s" href="#accuracy-and-benchmarks-comparison-with-other-tools">Comparison with other tools</a><a class="s" href="#accuracy-and-benchmarks-reporting-your-own-benchmark">Reporting your own benchmark</a><a class="s" href="#accuracy-and-benchmarks-measuring-quality">Measuring quality</a></div>
 <div class="grp" data-kind="all"><a class="d" href="#limitations">Limitations</a><a class="s" href="#limitations-ocr-is-probabilistic">OCR is probabilistic</a><a class="s" href="#limitations-what-pylex-does-not-do">What Pylex does not do</a><a class="s" href="#limitations-scripts-and-fonts">Scripts and fonts</a><a class="s" href="#limitations-hardware">Hardware</a><a class="s" href="#limitations-failure-handling">Failure handling</a><a class="s" href="#limitations-sensitive-documents">Sensitive documents</a></div>
 <h4>Help</h4>
-<div class="grp" data-kind="all"><a class="d" href="#troubleshooting">Troubleshooting</a><a class="s" href="#troubleshooting-paddleocr-is-not-installed">&quot;paddleocr is not installed&quot;</a><a class="s" href="#troubleshooting-pip-cannot-find-pylex-ocr">pip cannot find pylex-ocr</a><a class="s" href="#troubleshooting-i-asked-for-the-gpu-but-it-runs-on-the-cpu">I asked for the GPU but it runs on the CPU</a><a class="s" href="#troubleshooting--gpu-is-slower-with-j-4">--gpu is slower with -j 4</a><a class="s" href="#troubleshooting-the-search-finds-nothing-or-text-is-garbled">The search finds nothing, or text is garbled</a><a class="s" href="#troubleshooting-small-labels-are-missed-on-a-dense-drawing">Small labels are missed on a dense drawing</a><a class="s" href="#troubleshooting-the-first-run-is-very-slow">The first run is very slow</a><a class="s" href="#troubleshooting-no-available-model-hosting-platforms-detected">&quot;No available model hosting platforms detected&quot;</a><a class="s" href="#troubleshooting-output-already-exists">Output already exists</a><a class="s" href="#troubleshooting-onednn-or-pir-errors-with-paddle-static">oneDNN or PIR errors with Paddle static</a><a class="s" href="#troubleshooting-reporting-a-problem">Reporting a problem</a></div>
+<div class="grp" data-kind="all"><a class="d" href="#troubleshooting">Troubleshooting</a><a class="s" href="#troubleshooting-paddleocr-is-not-installed">&quot;paddleocr is not installed&quot;</a><a class="s" href="#troubleshooting-pip-says-no-matching-distribution-found-for-pylex-ocr">pip says &quot;No matching distribution found&quot; for pylex-ocr</a><a class="s" href="#troubleshooting-i-asked-for-the-gpu-but-it-runs-on-the-cpu">I asked for the GPU but it runs on the CPU</a><a class="s" href="#troubleshooting--gpu-is-slower-with-j-4">--gpu is slower with -j 4</a><a class="s" href="#troubleshooting-the-search-finds-nothing-or-text-is-garbled">The search finds nothing, or text is garbled</a><a class="s" href="#troubleshooting-small-labels-are-missed-on-a-dense-drawing">Small labels are missed on a dense drawing</a><a class="s" href="#troubleshooting-the-first-run-is-very-slow">The first run is very slow</a><a class="s" href="#troubleshooting-no-available-model-hosting-platforms-detected">&quot;No available model hosting platforms detected&quot;</a><a class="s" href="#troubleshooting-output-already-exists">Output already exists</a><a class="s" href="#troubleshooting-onednn-or-pir-errors-with-paddle-static">oneDNN or PIR errors with Paddle static</a><a class="s" href="#troubleshooting-reporting-a-problem">Reporting a problem</a></div>
 <div class="grp" data-kind="all"><a class="d" href="#changelog">Changelog</a></div>
-<p class="tag" style="margin-top:22px">Version 2.0.0<br><a href="https://github.com/voltvirtuoso/pylex" style="color:#8fa6c2">GitHub</a> <button id="th" style="background:none;border:0;color:#8fa6c2;cursor:pointer;font:inherit;text-decoration:underline">Toggle theme</button></p>
+<div class="foot"><span>Version 2.0.0</span><span class="ics"><a class="ib" href="https://github.com/voltvirtuoso/pylex" aria-label="GitHub repository" data-tip="GitHub repository" data-pos="top"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 17L17 7M8 7h9v9"/></svg></a><button class="ib" id="th" aria-label="Switch light or dark theme" data-tip="Light / dark" data-pos="top"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h16v16H4z"/><path d="M4 4h16v16z" fill="currentColor"/></svg></button></span></div>
 </nav>
 <main>
 <section id="overview" data-kind="all"><h1 >Pylex documentation</h1>
@@ -102,11 +146,11 @@ main{margin:0;padding:20px 16px 90px}h1{font-size:30px}}
 </table></div>
 <p>Both share one install and one set of models.</p>
 <h2 id="overview-sixty-seconds">Sixty seconds</h2>
-<pre><code class="language-bash">python -m pip install pylex-ocr
+<pre><code class="language-bash">python -m pip install &quot;pylex-ocr @ git+https://github.com/voltvirtuoso/pylex.git&quot;
 pylex doctor --install        # detects your CPU or NVIDIA GPU and installs the right runtime
 pylex scan.pdf                # writes scan.ocr.pdf
 </code></pre>
-<p>Hardware profiles (CPU, Intel, NVIDIA CUDA 12 and 13) and what is and is not supported are covered in <a href="#installation">Installation</a>.</p>
+<p>Pylex is installed from GitHub for now (it is not on PyPI yet). Hardware profiles (CPU, Intel, NVIDIA CUDA 12 and 13) and what is and is not supported are covered in <a href="#installation">Installation</a>.</p>
 <h2 id="overview-when-to-choose-something-else">When to choose something else</h2>
 <p>Pylex is not a general document-conversion suite. If you need PDF/A output, deskewing and clean-up, OCRmyPDF is the established choice and has a PaddleOCR plugin. Pylex is not a handwriting recognizer, a layout or table reconstruction engine, or a hosted service. See <a href="#limitations">Limitations</a>.</p>
 <h2 id="overview-where-to-go">Where to go</h2>
@@ -116,56 +160,73 @@ pylex scan.pdf                # writes scan.ocr.pdf
 <li>Something wrong: <a href="#troubleshooting">Troubleshooting</a></li>
 </ul></section>
 <section id="installation" data-kind="all"><h1 >Installation</h1>
-<p>Pylex needs an OCR runtime that matches your hardware, and the right pip package is different for a laptop CPU, an Intel server, and an NVIDIA GPU. This page shows the one command for each, and how to let Pylex pick for you.</p><div id="pick"><label for="hw">Choose your hardware</label><select id="hw"><option value="cpu">Any CPU</option><option value="g13">NVIDIA GPU, CUDA 13+</option><option value="g12">NVIDIA GPU, CUDA 12.x</option><option value="intel">Intel CPU (OpenVINO)</option><option value="auto">Not sure / Apple / AMD / TPU</option></select><pre><code></code></pre><p class="n"></p></div>
-<p>The distribution on PyPI is <strong><code>pylex-ocr</code></strong>. The Python module and the command are both <strong><code>pylex</code></strong>. (The name <code>pylex</code> on PyPI belongs to an unrelated project, so never run <code>pip install pylex</code>.)</p>
-<p>Requirements: Python 3.10, 3.11 or 3.12 on Linux, macOS or Windows.</p>
-<h2 id="installation-the-fastest-path-let-pylex-choose">The fastest path: let Pylex choose</h2>
-<p>Install the light core package, then ask Pylex what your machine needs:</p>
-<pre><code class="language-bash">python -m pip install pylex-ocr
-pylex doctor            # inspects CPU, NVIDIA GPU, TPU and installed packages
-pylex doctor --install  # runs the recommended pip command (asks first)
-</code></pre>
-<p><code>pylex doctor</code> prints the hardware it found, the runtime packages already installed, and the exact command to run. From Python the same thing is available as <code>pylex.doctor()</code>, so a notebook or deployment script can check itself.</p>
-<p>If you run <code>pylex</code> before any OCR runtime is installed, the error message already contains the right command for your machine.</p>
+<p>Pylex needs an OCR runtime that matches your hardware, and the right packages are different for a laptop CPU, an Intel server, and an NVIDIA GPU. This page shows one command for each, and how to let Pylex pick for you.</p><div id="pick"><label for="hw">Choose your hardware</label><select id="hw"><option value="cpu">Any CPU</option><option value="g13">NVIDIA GPU, CUDA 13+</option><option value="g12">NVIDIA GPU, CUDA 12.x</option><option value="intel">Intel CPU (OpenVINO)</option><option value="auto">Not sure / Apple / AMD / TPU</option></select><pre><code></code></pre><p class="n"></p></div>
+<p>The package name is <strong><code>pylex-ocr</code></strong>. The Python module and the command are both <strong><code>pylex</code></strong>. The name <code>pylex</code> on PyPI belongs to an unrelated project, so never install a package called plain <code>pylex</code>.</p>
+<blockquote>
+<p><strong>Pylex is installed from GitHub for now.</strong> It has not been published to PyPI yet, so every command on this page installs from the GitHub repository. You need Python 3.10, 3.11 or 3.12, and <code>git</code>. Once the package is on PyPI, remove <code>@ git+https://github.com/voltvirtuoso/pylex.git</code> from a command and the requirement becomes simply <code>pylex-ocr[cpu]</code>.</p>
+</blockquote>
 <h2 id="installation-pick-one-profile">Pick one profile</h2>
-<p>Choose exactly one of these. They are alternatives, not add-ons.</p>
+<p>Choose exactly one. They are alternatives, not add-ons.</p>
 <div class="tw"><table>
 <thead>
 <tr>
 <th>Your hardware</th>
-<th>Install command</th>
+<th>Profile</th>
 <th>What it installs</th>
 </tr>
 </thead>
 <tbody>
 <tr>
 <td>Any CPU (recommended default)</td>
-<td><code>pip install "pylex-ocr[cpu]"</code></td>
+<td><code>[cpu]</code></td>
 <td>PaddleOCR, PaddlePaddle, ONNX Runtime</td>
 </tr>
 <tr>
 <td>Intel CPU, to try OpenVINO</td>
-<td><code>pip install "pylex-ocr[intel]"</code></td>
+<td><code>[intel]</code></td>
 <td>PaddleOCR, PaddlePaddle, ONNX Runtime with the OpenVINO provider</td>
 </tr>
 <tr>
 <td>NVIDIA GPU, <code>nvidia-smi</code> reports CUDA 13 or newer</td>
-<td><code>pip install "pylex-ocr[gpu]"</code></td>
+<td><code>[gpu]</code></td>
 <td>PaddleOCR, PaddlePaddle, <code>onnxruntime-gpu</code> for CUDA 13, plus CUDA and cuDNN libraries from pip</td>
 </tr>
 <tr>
 <td>NVIDIA GPU, <code>nvidia-smi</code> reports CUDA 12.x</td>
-<td><code>pip install "pylex-ocr[gpu-cu12]"</code></td>
+<td><code>[gpu-cu12]</code></td>
 <td>The same, built for CUDA 12</td>
 </tr>
 </tbody>
 </table></div>
-<p>These work the same for the command line tool and the Python SDK, because they are the same package.</p>
+<p>Then run the matching command. The command line tool and the Python SDK are the same package, so one install covers both.</p>
+<pre><code class="language-bash"># Any CPU
+python -m pip install &quot;pylex-ocr[cpu] @ git+https://github.com/voltvirtuoso/pylex.git&quot;
+
+# Intel CPU with OpenVINO
+python -m pip install &quot;pylex-ocr[intel] @ git+https://github.com/voltvirtuoso/pylex.git&quot;
+
+# NVIDIA GPU, CUDA 13 or newer
+python -m pip install &quot;pylex-ocr[gpu] @ git+https://github.com/voltvirtuoso/pylex.git&quot;
+
+# NVIDIA GPU, CUDA 12.x
+python -m pip install &quot;pylex-ocr[gpu-cu12] @ git+https://github.com/voltvirtuoso/pylex.git&quot;
+</code></pre>
+<p>Keep the quotes: without them most shells misread the brackets and spaces.</p>
+<p><strong>No <code>git</code> installed?</strong> Replace <code>git+https://github.com/voltvirtuoso/pylex.git</code> with <code>https://github.com/voltvirtuoso/pylex/archive/refs/heads/main.zip</code>:</p>
+<pre><code class="language-bash">python -m pip install &quot;pylex-ocr[cpu] @ https://github.com/voltvirtuoso/pylex/archive/refs/heads/main.zip&quot;
+</code></pre>
 <blockquote>
 <p><strong>Why one profile only?</strong> <code>onnxruntime</code>, <code>onnxruntime-gpu</code> and <code>onnxruntime-openvino</code> all provide the same Python module name. Installing two of them corrupts each other's files. If you switch hardware profiles, remove the old one first (see <a href="#installation-switching-profiles">Switching profiles</a>).</p>
 </blockquote>
+<h2 id="installation-not-sure-let-pylex-choose">Not sure? Let Pylex choose</h2>
+<p>Install the light core package, then ask Pylex what your machine needs:</p>
+<pre><code class="language-bash">python -m pip install &quot;pylex-ocr @ git+https://github.com/voltvirtuoso/pylex.git&quot;
+pylex doctor            # inspects CPU, NVIDIA GPU, TPU and installed packages
+pylex doctor --install  # runs the recommended pip command (asks first)
+</code></pre>
+<p><code>pylex doctor</code> prints the hardware it found, the runtime packages already installed, and the exact command to run. From Python the same thing is available as <code>pylex.doctor()</code>. If you run <code>pylex</code> before any OCR runtime is installed, the error message already contains the right command for your machine.</p>
 <h3 id="installation-which-cuda-version-do-i-have">Which CUDA version do I have?</h3>
-<p>Run <code>nvidia-smi</code> and read <strong>CUDA Version</strong> in the top-right corner. That is the newest CUDA your <strong>driver</strong> supports, which is what matters here. You do not need the CUDA toolkit installed: the <code>gpu</code> extras pull the CUDA and cuDNN runtime libraries from pip.</p>
+<p>Run <code>nvidia-smi</code> and read <strong>CUDA Version</strong> in the top-right corner. That is the newest CUDA your <strong>driver</strong> supports, which is what matters here. You do not need the CUDA toolkit installed: the <code>gpu</code> profiles pull the CUDA and cuDNN runtime libraries from pip.</p>
 <ul>
 <li><strong>13.x or newer</strong> → <code>[gpu]</code>. ONNX Runtime's documentation says its CUDA 13.0 builds require CUDA 13.0 or newer, and that PyPI's <code>onnxruntime-gpu</code> has been built with CUDA 13.0 by default since version 1.27.</li>
 <li><strong>12.x</strong> → <code>[gpu-cu12]</code>, which pins ONNX Runtime below 1.27. The same documentation says builds made with CUDA 12.8 require CUDA 12.8 or newer, so if the GPU check below fails on an older 12.x driver, update the driver.</li>
@@ -175,15 +236,15 @@ pylex doctor --install  # runs the recommended pip command (asks first)
 <p>Having <code>onnxruntime-gpu</code> installed does not prove CUDA loads. ONNX Runtime silently falls back to the CPU if a CUDA or cuDNN library is missing, and Pylex hides backend output, so verify explicitly:</p>
 <pre><code class="language-bash">pylex doctor --verify-gpu
 </code></pre>
-<p>It builds a tiny model and asks ONNX Runtime which provider it actually registered. <code>OK - CUDAExecutionProvider is active</code> means you are on the GPU. Then run:</p>
-<pre><code class="language-bash">pylex scan.pdf --device gpu -v
+<p>It builds a tiny model and asks ONNX Runtime which provider it actually registered. <code>OK - CUDAExecutionProvider is active</code> means you are on the GPU. Then run <code>pylex scan.pdf --device gpu -v</code>, or in Python <code>Config(device="gpu")</code>. See <a href="#cli-using-a-gpu">Using a GPU</a> and <a href="#python-api-gpu-in-the-sdk">GPU in the SDK</a>.</p>
+<h2 id="installation-installing-from-a-local-build">Installing from a local build</h2>
+<p>To install exactly what is in your checkout, without GitHub or PyPI:</p>
+<pre><code class="language-bash">python -m pip install build
+python -m build                                   # creates dist/pylex_ocr-&lt;version&gt;-py3-none-any.whl
+python -m pip install &quot;dist/pylex_ocr-2.0.0-py3-none-any.whl[cpu]&quot;
+pylex doctor
 </code></pre>
-<p>or, in Python, <code>Config(device="gpu")</code>. See <a href="#cli-using-a-gpu">Using a GPU</a> and <a href="#python-api-gpu-in-the-sdk">GPU in the SDK</a>.</p>
-<h2 id="installation-installing-from-github">Installing from GitHub</h2>
-<p>Before a release is on PyPI, or to try the latest code, install straight from the repository. Quote the whole thing:</p>
-<pre><code class="language-bash">python -m pip install &quot;pylex-ocr[cpu] @ git+https://github.com/voltvirtuoso/pylex.git&quot;
-</code></pre>
-<p>Replace <code>[cpu]</code> with <code>[gpu]</code>, <code>[gpu-cu12]</code> or <code>[intel]</code> as needed. For development:</p>
+<p>Use the file name that <code>build</code> printed, and swap <code>[cpu]</code> for another profile if needed. For development with tests:</p>
 <pre><code class="language-bash">git clone https://github.com/voltvirtuoso/pylex.git
 cd pylex
 python -m pip install -e &quot;.[cpu,dev]&quot;
@@ -193,18 +254,14 @@ pytest
 <p>OCR runtimes are large and version-sensitive. Keep Pylex in its own environment:</p>
 <pre><code class="language-bash">python -m venv .venv
 source .venv/bin/activate        # Windows: .venv\Scripts\activate
-python -m pip install &quot;pylex-ocr[cpu]&quot;
-</code></pre>
-<p>To use only the command line tool, <code>pipx</code> isolates it for you:</p>
-<pre><code class="language-bash">pipx install &quot;pylex-ocr[cpu]&quot;
+python -m pip install &quot;pylex-ocr[cpu] @ git+https://github.com/voltvirtuoso/pylex.git&quot;
 </code></pre>
 <h2 id="installation-paddle-gpu-build-alternative-to-onnx-runtime">Paddle GPU build (alternative to ONNX Runtime)</h2>
 <p>Pylex can also run on the GPU through PaddlePaddle's own CUDA build, instead of ONNX Runtime. PyPI only carries <code>paddlepaddle-gpu</code> up to version 2.6.2 (checked October 2026); the 3.x GPU builds come from Paddle's own package index, so a pip extra cannot select them and you install in two steps. Copy the exact command for your CUDA version and platform from <a href="https://www.paddlepaddle.org.cn/documentation/docs/en/install/index_en.html">Paddle's installation guide</a>; it has the form:</p>
 <pre><code class="language-bash">python -m pip install paddlepaddle-gpu==&lt;version&gt; -i &lt;package-index-url-from-the-guide&gt;
-python -m pip install pylex-ocr &quot;paddleocr&gt;=3.0,&lt;4&quot;
+python -m pip install &quot;pylex-ocr @ git+https://github.com/voltvirtuoso/pylex.git&quot; &quot;paddleocr&gt;=3.0,&lt;4&quot;
 </code></pre>
-<p>Do <strong>not</strong> use the <code>[ocr]</code> or <code>[cpu]</code> extras here: they would also install the CPU <code>paddlepaddle</code>, which conflicts with <code>paddlepaddle-gpu</code>. Leave <code>onnxruntime</code> out as well, or add <code>--inference-engine paddle_dynamic</code> so Pylex does not pick it.</p>
-<p>This route needs a system CUDA setup that matches the wheel. For most people the <code>[gpu]</code> profile above is simpler.</p>
+<p>Do <strong>not</strong> use a profile here: <code>[cpu]</code>, <code>[intel]</code> and the <code>[gpu]</code> profiles also install the CPU <code>paddlepaddle</code>, which conflicts with <code>paddlepaddle-gpu</code>. Leave <code>onnxruntime</code> out as well, or add <code>--inference-engine paddle_dynamic</code> so Pylex does not pick it. This route needs a system CUDA setup that matches the wheel. For most people the <code>[gpu]</code> profile is simpler.</p>
 <h2 id="installation-other-accelerators">Other accelerators</h2>
 <p>PaddleOCR can target several accelerator types through its device setting, and Pylex passes the value through on the Paddle runtimes:</p>
 <pre><code class="language-bash">pylex scan.pdf --device npu:0 --inference-engine paddle_dynamic
@@ -248,7 +305,7 @@ python -m pip install pylex-ocr &quot;paddleocr&gt;=3.0,&lt;4&quot;
 <h2 id="installation-switching-profiles">Switching profiles</h2>
 <p>To move from one profile to another, remove every ONNX Runtime package and then install the new profile:</p>
 <pre><code class="language-bash">python -m pip uninstall -y onnxruntime onnxruntime-gpu onnxruntime-openvino
-python -m pip install &quot;pylex-ocr[gpu]&quot;
+python -m pip install &quot;pylex-ocr[gpu] @ git+https://github.com/voltvirtuoso/pylex.git&quot;
 </code></pre>
 <p><code>pylex doctor</code> detects when more than one is installed and prints this for you.</p>
 <h2 id="installation-check-the-installation">Check the installation</h2>
@@ -262,7 +319,7 @@ print(pylex.doctor())
 <p>The status line reads <strong>ready</strong> when the packages and providers match the recommended profile. If something is off, the report says what to change. See also <a href="#troubleshooting">Troubleshooting</a>.</p></section>
 <section id="quickstart" data-kind="all"><h1 >Quickstart</h1>
 <p>Five minutes from nothing to a searchable PDF, once from the command line and once from Python. Install first: <a href="#installation">Installation</a>.</p>
-<pre><code class="language-bash">python -m pip install &quot;pylex-ocr[cpu]&quot;     # or [gpu], [gpu-cu12], [intel]
+<pre><code class="language-bash">python -m pip install &quot;pylex-ocr[cpu] @ git+https://github.com/voltvirtuoso/pylex.git&quot;   # or [gpu], [gpu-cu12], [intel]
 </code></pre>
 <h2 id="quickstart-command-line">Command line</h2>
 <h3 id="quickstart-one-scanned-pdf">One scanned PDF</h3>
@@ -319,7 +376,7 @@ print(result.pages_processed, &quot;pages,&quot;, result.lines_added, &quot;line
 <li><strong>results</strong>: <code>TextRegion</code> objects from <code>extract_text</code>, or a <code>FileResult</code> from <code>create_searchable_document</code>.</li>
 </ul>
 <h2 id="python-api-extract_text">extract_text</h2>
-<pre><code class="language-python">extract_text(source, *, config=None, engine=None, on_tile=None, on_tile_done=None) -&gt; list[TextRegion]
+<pre><code class="language-text">extract_text(source, *, config=None, engine=None, on_tile=None, on_tile_done=None) -&gt; list[TextRegion]
 </code></pre>
 <p><code>source</code> can be a file path, a PIL image, or a NumPy array (2-D grayscale or 3-D RGB; an alpha channel is dropped). NumPy arrays are assumed to be RGB. Large images are processed in overlapping tiles according to the config, and results are merged back into whole-image coordinates.</p>
 <pre><code class="language-python">config = Config(model_size=&quot;small&quot;)
@@ -357,7 +414,7 @@ for r in regions:
 </table></div>
 <p>Regions are lines of text, not a document model: reading order, tables and headings are not reconstructed.</p>
 <h2 id="python-api-create_searchable_document">create_searchable_document</h2>
-<pre><code class="language-python">create_searchable_document(input_path, output_path, *, config=None, engine=None,
+<pre><code class="language-text">create_searchable_document(input_path, output_path, *, config=None, engine=None,
                            on_page=None, on_stage=None, on_tile=None, on_tile_done=None) -&gt; FileResult
 </code></pre>
 <p>Takes a PDF or image and writes a searchable PDF.</p>
@@ -1323,13 +1380,13 @@ python benchmarks/compare.py --input-dir my-scans/             # your own files:
 <section id="troubleshooting" data-kind="all"><h1 >Troubleshooting</h1>
 <p>Start with <code>pylex doctor</code>. It lists the hardware found, the packages installed, and the command to fix the setup.</p>
 <h2 id="troubleshooting-paddleocr-is-not-installed">"paddleocr is not installed"</h2>
-<p>No OCR runtime is installed. The message includes the command for your machine; or run <code>pylex doctor --install</code>. Do not use <code>pip install pylex</code> (an unrelated project).</p>
-<h2 id="troubleshooting-pip-cannot-find-pylex-ocr"><code>pip</code> cannot find <code>pylex-ocr</code></h2>
-<p>If no release is on PyPI yet, install from GitHub: <code>pip install "pylex-ocr[cpu] @ git+https://github.com/voltvirtuoso/pylex.git"</code>.</p>
+<p>No OCR runtime is installed. The message includes the command for your machine; or run <code>pylex doctor --install</code>. Do not install a package called plain <code>pylex</code> (an unrelated project).</p>
+<h2 id="troubleshooting-pip-says-no-matching-distribution-found-for-pylex-ocr"><code>pip</code> says "No matching distribution found" for <code>pylex-ocr</code></h2>
+<p>Pylex is not on PyPI yet, so a plain <code>pylex-ocr</code> requirement cannot be found. Install from GitHub instead: <code>pip install "pylex-ocr[cpu] @ git+https://github.com/voltvirtuoso/pylex.git"</code>.</p>
 <h2 id="troubleshooting-i-asked-for-the-gpu-but-it-runs-on-the-cpu">I asked for the GPU but it runs on the CPU</h2>
 <p>Pylex prints a warning saying why. Common causes:</p>
 <ul>
-<li><strong>Plain <code>onnxruntime</code> is installed.</strong> It has no CUDA. Run <code>pip uninstall -y onnxruntime</code>, then <code>pip install "pylex-ocr[gpu]"</code>.</li>
+<li><strong>Plain <code>onnxruntime</code> is installed.</strong> It has no CUDA. Run <code>pip uninstall -y onnxruntime</code>, then <code>pip install "pylex-ocr[gpu] @ git+https://github.com/voltvirtuoso/pylex.git"</code>.</li>
 <li><strong>Two ONNX Runtime packages are installed.</strong> <code>doctor</code> flags this. Uninstall all of <code>onnxruntime</code>, <code>onnxruntime-gpu</code>, <code>onnxruntime-openvino</code>, then install one profile.</li>
 <li><strong>CUDA libraries did not load.</strong> Run <code>pylex doctor --verify-gpu</code>. If it says the provider is listed but did not load, your driver is probably too old for the build. Check <code>nvidia-smi</code>: CUDA 13 needs <code>[gpu]</code>, CUDA 12 needs <code>[gpu-cu12]</code>.</li>
 <li><strong>No NVIDIA GPU.</strong> Intel, AMD and Apple hardware run on the CPU in Pylex, and TPUs are not supported. See <a href="#installation">Installation</a>.</li>
@@ -1362,6 +1419,7 @@ and this project adheres to <a href="https://semver.org/spec/v2.0.0.html">Semant
 <h2 id="changelog-unreleased"><a href="https://github.com/voltvirtuoso/pylex/compare/v2.0.0...HEAD">Unreleased</a></h2>
 <h3 id="changelog-added">Added</h3>
 <ul>
+<li>Discoverability: page metadata, social-preview image, JSON-LD, <code>sitemap.xml</code>, <code>llms.txt</code> and <code>llms-full.txt</code> for the docs site; README feature list and FAQ; extra package keywords and classifiers.</li>
 <li>Hardware-matched install profiles: <code>[cpu]</code>, <code>[intel]</code>, <code>[gpu]</code> (CUDA 13) and <code>[gpu-cu12]</code>.</li>
 <li><code>pylex doctor</code> (and <code>pylex.doctor()</code>): detects CPU, NVIDIA GPU, TPU and installed runtimes, recommends an install, flags conflicting ONNX Runtime packages; <code>--verify-gpu</code> confirms CUDA really loads; <code>--install</code> runs the recommended commands.</li>
 <li><code>--device auto|cpu|gpu|gpu:N</code> and <code>Config(device=...)</code>; <code>--gpu</code> remains as a shortcut. Other Paddle accelerator types are passed through (untested).</li>
@@ -1373,6 +1431,13 @@ and this project adheres to <a href="https://semver.org/spec/v2.0.0.html">Semant
 </ul>
 <h3 id="changelog-fixed">Fixed</h3>
 <ul>
+<li>Install commands everywhere (README, docs, the docs hardware picker, <code>pylex doctor</code>, and error messages) now use the GitHub install, because the package is not on PyPI yet. A single switch, <code>PUBLISHED_ON_PYPI</code> in <code>pylex/runtime.py</code>, changes all of them to the short form after the first release.</li>
+<li><code>pylex doctor</code> no longer reports a deliberate Intel/OpenVINO install as needing changes.</li>
+<li>Tests now check every command and Python snippet in the README and docs against the real CLI parser and Python syntax, and fail if a PyPI-only install command appears while the package is unpublished.</li>
+<li>Install docs no longer imply the package is already on PyPI; they explain the local-build and GitHub routes to use until the first release.</li>
+<li>Docs site: menu, close, copy, theme and GitHub controls are now square-edged icons with hover/focus labels (and screen-reader labels) instead of text buttons.</li>
+<li>Docs site now uses a four-colour palette (deep red, sand, cream, near-black maroon) in both light and dark themes, with all text pairs at or above 4.5:1 contrast.</li>
+<li>Docs site: the All / Python SDK / CLI selector no longer changes size when switched, and the page uses square corners throughout.</li>
 <li>Install guidance now states only what is documented: ONNX Runtime's CUDA 13 / CUDA 12.8 requirements, and that TPUs are not in PaddleOCR's supported hardware list.</li>
 <li>Unreachable model hosts produced a raw PaddleX traceback; there is now a clear message with the available workarounds.</li>
 <li>An error message named a non-existent <code>--allow-runtime-fallback</code> flag.</li>
@@ -1654,7 +1719,8 @@ and this project adheres to <a href="https://semver.org/spec/v2.0.0.html">Semant
 <script>
 const $=(s,r=document)=>[...r.querySelectorAll(s)];
 // copy buttons
-$('pre').forEach(p=>{const w=document.createElement('div');w.className='pw';p.replaceWith(w);w.append(p);const b=document.createElement('button');b.className='cp';b.textContent='Copy';b.onclick=()=>{navigator.clipboard.writeText(p.innerText).then(()=>{b.textContent='Copied';setTimeout(()=>b.textContent='Copy',1400)})};w.append(b)});
+const IC={copy:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 8h12v12H8zM4 16V4h12"/></svg>',ok:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12l5 5L20 6"/></svg>'};
+$('pre').forEach(p=>{const w=document.createElement('div');w.className='pw';p.replaceWith(w);w.append(p);const b=document.createElement('button');b.className='cp';b.innerHTML=IC.copy;b.setAttribute('aria-label','Copy code');b.dataset.tip='Copy';b.dataset.pos='left';b.onclick=()=>{navigator.clipboard.writeText(p.innerText).then(()=>{b.innerHTML=IC.ok;b.dataset.tip='Copied';setTimeout(()=>{b.innerHTML=IC.copy;b.dataset.tip='Copy'},1400)})};w.append(b)});
 // SDK / CLI filter
 $('.seg button').forEach(b=>b.onclick=()=>{$('.seg button').forEach(x=>x.setAttribute('aria-pressed',x===b));const k=b.dataset.k;
 $('[data-kind]').forEach(e=>e.classList.toggle('hide',k!=='all'&&e.dataset.kind!=='all'&&e.dataset.kind!==k));if(k!=='all')location.hash=k==='sdk'?'python-api':'cli'});
@@ -1665,11 +1731,11 @@ const links=new Map($('#side a[href^="#"]').map(a=>[a.getAttribute('href').slice
 const io=new IntersectionObserver(es=>{es.forEach(e=>{if(!e.isIntersecting)return;const id=e.target.id,a=links.get(id);if(!a)return;$('#side a.on').forEach(x=>x.classList.remove('on'));$('#side .cur').forEach(x=>x.classList.remove('cur'));a.classList.add('on');(a.closest('.grp')||{classList:{add(){}}}).classList.add('cur')})},{rootMargin:'0px 0px -75% 0px'});
 $('section,main h2').forEach(e=>e.id&&io.observe(e));
 // mobile menu, theme
-const side=document.getElementById('side');document.getElementById('menu').onclick=e=>{const o=side.classList.toggle('open');e.target.setAttribute('aria-expanded',o)};
+const side=document.getElementById('side');const mb=document.getElementById('menu');mb.onclick=()=>{const o=side.classList.toggle('open');mb.setAttribute('aria-expanded',o)};document.getElementById('close').onclick=()=>{side.classList.remove('open');mb.setAttribute('aria-expanded',false)};
 side.addEventListener('click',e=>{if(e.target.matches('a'))side.classList.remove('open')});
-document.getElementById('th').onclick=()=>{const r=document.documentElement;const d=getComputedStyle(r).getPropertyValue('--bg').trim()==='#0f1620';r.dataset.theme=d?'light':'dark'};
+document.getElementById('th').onclick=()=>{const r=document.documentElement;const d=r.dataset.theme?r.dataset.theme==='dark':matchMedia('(prefers-color-scheme:dark)').matches;r.dataset.theme=d?'light':'dark'};
 // install picker
-const pk=document.getElementById('pick');if(pk){const C={cpu:['python -m pip install "pylex-ocr[cpu]"','Works on any CPU. The recommended default.'],intel:['python -m pip install "pylex-ocr[intel]"','OpenVINO. Benchmark it against [cpu]; it is not always faster.'],g13:['python -m pip install "pylex-ocr[gpu]"','nvidia-smi reports CUDA 13 or newer. CUDA and cuDNN libraries come from pip, so no CUDA toolkit is needed.'],g12:['python -m pip install "pylex-ocr[gpu-cu12]"','nvidia-smi reports CUDA 12.x. ONNX Runtime documents that its CUDA 12.8 builds need CUDA 12.8 or newer. No CUDA toolkit needed.'],auto:['python -m pip install pylex-ocr\npylex doctor --install','Not sure, or Apple, AMD or TPU hardware: Pylex detects your machine and runs the right command (the CPU profile on hardware it cannot use).']};
+const pk=document.getElementById('pick');if(pk){const C={cpu:['python -m pip install "pylex-ocr[cpu] @ git+https://github.com/voltvirtuoso/pylex.git"','Works on any CPU. The recommended default.'],intel:['python -m pip install "pylex-ocr[intel] @ git+https://github.com/voltvirtuoso/pylex.git"','OpenVINO. Benchmark it against [cpu]; it is not always faster.'],g13:['python -m pip install "pylex-ocr[gpu] @ git+https://github.com/voltvirtuoso/pylex.git"','nvidia-smi reports CUDA 13 or newer. CUDA and cuDNN libraries come from pip, so no CUDA toolkit is needed.'],g12:['python -m pip install "pylex-ocr[gpu-cu12] @ git+https://github.com/voltvirtuoso/pylex.git"','nvidia-smi reports CUDA 12.x. ONNX Runtime documents that its CUDA 12.8 builds need CUDA 12.8 or newer. No CUDA toolkit needed.'],auto:['python -m pip install "pylex-ocr @ git+https://github.com/voltvirtuoso/pylex.git"\npylex doctor --install','Not sure, or Apple, AMD or TPU hardware: Pylex detects your machine and runs the right command (the CPU profile on hardware it cannot use).']};
 const s=pk.querySelector('select'),c=pk.querySelector('code'),n=pk.querySelector('.n');const f=()=>{c.textContent=C[s.value][0];n.textContent=C[s.value][1]};s.onchange=f;f()}
 </script>
 </body>

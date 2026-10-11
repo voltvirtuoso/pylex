@@ -14,7 +14,7 @@ from pylex import Config, create_engine, extract_text, create_searchable_documen
 
 ## extract_text
 
-```python
+```text
 extract_text(source, *, config=None, engine=None, on_tile=None, on_tile_done=None) -> list[TextRegion]
 ```
 
@@ -40,7 +40,7 @@ Regions are lines of text, not a document model: reading order, tables and headi
 
 ## create_searchable_document
 
-```python
+```text
 create_searchable_document(input_path, output_path, *, config=None, engine=None,
                            on_page=None, on_stage=None, on_tile=None, on_tile_done=None) -> FileResult
 ```

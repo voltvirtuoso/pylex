@@ -70,7 +70,7 @@ def test_nvidia_gpu_gets_matching_cuda_profile(cuda, profile):
     rec = runtime.recommend_install(report)
 
     assert rec.profile == profile
-    assert rec.commands == [f'python -m pip install "pylex-ocr[{profile}]"']
+    assert rec.commands == [f'python -m pip install "{runtime.install_spec(profile)}"']
 
 
 def test_driver_too_old_for_current_onnxruntime_falls_back_to_cpu_with_warning():
@@ -132,7 +132,7 @@ def test_conflicting_onnxruntime_packages_are_flagged_and_uninstalled_first():
 
     assert any("Conflicting" in w for w in rec.warnings)
     assert rec.commands[0] == "python -m pip uninstall -y onnxruntime onnxruntime-gpu"
-    assert rec.commands[-1] == 'python -m pip install "pylex-ocr[gpu]"'
+    assert rec.commands[-1] == f'python -m pip install "{runtime.install_spec("gpu")}"'
     assert rec.ready is False
 
 
@@ -431,3 +431,55 @@ def test_unreachable_model_hosts_give_a_clear_setup_error(monkeypatch):
         engine_mod.get_ocr_engine(Config())
 
     assert "PADDLE_PDX_MODEL_SOURCE" in str(info.value)
+
+
+def test_install_commands_use_the_github_source_until_published(monkeypatch):
+    monkeypatch.setattr(runtime, "PUBLISHED_ON_PYPI", False)
+
+    assert runtime.install_spec("cpu") == "pylex-ocr[cpu] @ git+https://github.com/voltvirtuoso/pylex.git"
+    assert runtime.install_spec() == "pylex-ocr @ git+https://github.com/voltvirtuoso/pylex.git"
+    assert "git+https://github.com/voltvirtuoso/pylex.git" in runtime.install_hint()
+
+
+def test_install_commands_switch_to_the_short_form_once_published(monkeypatch):
+    monkeypatch.setattr(runtime, "PUBLISHED_ON_PYPI", True)
+
+    assert runtime.install_spec("gpu") == "pylex-ocr[gpu]"
+    assert "git+" not in runtime.install_hint()
+
+
+def test_a_deliberate_openvino_install_is_ready_not_a_conflict():
+    report = make_report(installed={"paddleocr": "3.7.0", "onnxruntime-openvino": "1.24.1"})
+
+    rec = runtime.recommend_install(report)
+
+    assert rec.ready is True
+    assert not any("Conflicting" in w for w in rec.warnings)
+
+
+def test_two_onnxruntime_packages_are_never_ready():
+    report = make_report(installed={"paddleocr": "3.7.0", "onnxruntime": "1.30", "onnxruntime-openvino": "1.24"})
+
+    rec = runtime.recommend_install(report)
+
+    assert rec.ready is False
+    assert any("Conflicting" in w for w in rec.warnings)
+
+
+def test_no_user_facing_text_tells_people_to_install_an_unpublished_package():
+    """While the package is not on PyPI, `pip install "pylex-ocr[...]"` fails. Docs must not show it."""
+    import re
+    from pathlib import Path
+
+    if runtime.PUBLISHED_ON_PYPI:
+        pytest.skip("package is published; the short form is valid")
+    root = Path(__file__).resolve().parent.parent
+    short_form = re.compile(r"""(pip|pipx)\s+install\s+(--upgrade\s+)?["']?pylex-ocr(\[[^\]]*\])?["']?(?![\w\[ @.-])""")
+    offenders = []
+    files = [root / "README.md", root / "PERFORMANCE.md", *sorted((root / "docs").glob("*.md")),
+             *sorted((root / "src").rglob("*.py")), root / "scripts" / "docs_template.html"]
+    for path in files:
+        for number, line in enumerate(path.read_text(encoding="utf-8").splitlines(), 1):
+            if short_form.search(line):
+                offenders.append(f"{path.relative_to(root)}:{number}: {line.strip()[:90]}")
+    assert not offenders, "PyPI-only install commands found:\n" + "\n".join(offenders)

@@ -18,7 +18,7 @@ stored sideways with /Rotate 90 or 270 (what scanners and rotated CAD exports pr
     python benchmarks/compare.py --self-test         # validate the scoring with a perfect-OCR oracle
 
 Install the tools you want to compare: pip install ocrmypdf ocrmypdf-paddleocr (plus Tesseract and
-Ghostscript on the system) and a Pylex profile such as pip install "pylex-ocr[cpu]".
+Ghostscript on the system) and a Pylex profile (see docs/installation.md).
 """
 
 from __future__ import annotations

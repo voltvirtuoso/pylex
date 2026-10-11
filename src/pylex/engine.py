@@ -229,7 +229,8 @@ def _effective_inference_engine(cfg: Config) -> str:
 
 
 _GPU_FIX = (
-    'Install a GPU runtime: pip install "pylex-ocr[gpu]" (CUDA 13) or "pylex-ocr[gpu-cu12]" (CUDA 12). '
+    f'Install a GPU runtime: pip install "{runtime.install_spec("gpu")}" (CUDA 13) or '
+    f'"{runtime.install_spec("gpu-cu12")}" (CUDA 12). '
     "Uninstall the CPU onnxruntime package first: pip uninstall -y onnxruntime. "
     "Run `pylex doctor` for a recommendation for this machine."
 )

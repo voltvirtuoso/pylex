@@ -1,0 +1,864 @@
+# Pylex documentation (full text)
+
+> Pylex is a Python OCR library and command-line tool that makes scanned PDFs searchable and extracts text, confidence and position from images. It runs on CPU and NVIDIA GPU and installs from GitHub.
+
+---
+
+# Pylex documentation
+
+Pylex is an open-source Python OCR package and command-line tool. It reads text from images and scanned PDFs, and adds an invisible, searchable text layer to a PDF while keeping the original page untouched. The same engine is available as a Python library that returns text, confidence and position for every line.
+
+It is built for pages where plain OCR struggles: **large, dense or rotated documents** such as engineering drawings, where small labels sit between symbols and PDF pages carry a rotation flag.
+
+## Two ways to use it
+
+| | Command line | Python SDK |
+|---|---|---|
+| Best for | Folders of scans, one-off jobs, scripts | Applications, services, notebooks |
+| Start with | `pylex scan.pdf` | `extract_text("page.png")` |
+| Reference | [CLI reference](cli.md) | [Python SDK](python-api.md) |
+
+Both share one install and one set of models.
+
+## Sixty seconds
+
+```bash
+python -m pip install "pylex-ocr @ git+https://github.com/voltvirtuoso/pylex.git"
+pylex doctor --install        # detects your CPU or NVIDIA GPU and installs the right runtime
+pylex scan.pdf                # writes scan.ocr.pdf
+```
+
+Pylex is installed from GitHub for now (it is not on PyPI yet). Hardware profiles (CPU, Intel, NVIDIA CUDA 12 and 13) and what is and is not supported are covered in [Installation](installation.md).
+
+## When to choose something else
+
+Pylex is not a general document-conversion suite. If you need PDF/A output, deskewing and clean-up, OCRmyPDF is the established choice and has a PaddleOCR plugin. Pylex is not a handwriting recognizer, a layout or table reconstruction engine, or a hosted service. See [Limitations](limitations.md).
+
+## Where to go
+
+- New: [Installation](installation.md), then [Quickstart](quickstart.md)
+- Understanding results and speed: [How it works](how-it-works.md), [Accuracy and benchmarks](accuracy-and-benchmarks.md)
+- Something wrong: [Troubleshooting](troubleshooting.md)
+
+---
+
+# Installation
+
+Pylex needs an OCR runtime that matches your hardware, and the right packages are different for a laptop CPU, an Intel server, and an NVIDIA GPU. This page shows one command for each, and how to let Pylex pick for you.
+
+The package name is **`pylex-ocr`**. The Python module and the command are both **`pylex`**. The name `pylex` on PyPI belongs to an unrelated project, so never install a package called plain `pylex`.
+
+> **Pylex is installed from GitHub for now.** It has not been published to PyPI yet, so every command on this page installs from the GitHub repository. You need Python 3.10, 3.11 or 3.12, and `git`. Once the package is on PyPI, remove ` @ git+https://github.com/voltvirtuoso/pylex.git` from a command and the requirement becomes simply `pylex-ocr[cpu]`.
+
+## Pick one profile
+
+Choose exactly one. They are alternatives, not add-ons.
+
+| Your hardware | Profile | What it installs |
+|---|---|---|
+| Any CPU (recommended default) | `[cpu]` | PaddleOCR, PaddlePaddle, ONNX Runtime |
+| Intel CPU, to try OpenVINO | `[intel]` | PaddleOCR, PaddlePaddle, ONNX Runtime with the OpenVINO provider |
+| NVIDIA GPU, `nvidia-smi` reports CUDA 13 or newer | `[gpu]` | PaddleOCR, PaddlePaddle, `onnxruntime-gpu` for CUDA 13, plus CUDA and cuDNN libraries from pip |
+| NVIDIA GPU, `nvidia-smi` reports CUDA 12.x | `[gpu-cu12]` | The same, built for CUDA 12 |
+
+Then run the matching command. The command line tool and the Python SDK are the same package, so one install covers both.
+
+```bash
+# Any CPU
+python -m pip install "pylex-ocr[cpu] @ git+https://github.com/voltvirtuoso/pylex.git"
+
+# Intel CPU with OpenVINO
+python -m pip install "pylex-ocr[intel] @ git+https://github.com/voltvirtuoso/pylex.git"
+
+# NVIDIA GPU, CUDA 13 or newer
+python -m pip install "pylex-ocr[gpu] @ git+https://github.com/voltvirtuoso/pylex.git"
+
+# NVIDIA GPU, CUDA 12.x
+python -m pip install "pylex-ocr[gpu-cu12] @ git+https://github.com/voltvirtuoso/pylex.git"
+```
+
+Keep the quotes: without them most shells misread the brackets and spaces.
+
+**No `git` installed?** Replace `git+https://github.com/voltvirtuoso/pylex.git` with `https://github.com/voltvirtuoso/pylex/archive/refs/heads/main.zip`:
+
+```bash
+python -m pip install "pylex-ocr[cpu] @ https://github.com/voltvirtuoso/pylex/archive/refs/heads/main.zip"
+```
+
+> **Why one profile only?** `onnxruntime`, `onnxruntime-gpu` and `onnxruntime-openvino` all provide the same Python module name. Installing two of them corrupts each other's files. If you switch hardware profiles, remove the old one first (see [Switching profiles](#switching-profiles)).
+
+## Not sure? Let Pylex choose
+
+Install the light core package, then ask Pylex what your machine needs:
+
+```bash
+python -m pip install "pylex-ocr @ git+https://github.com/voltvirtuoso/pylex.git"
+pylex doctor            # inspects CPU, NVIDIA GPU, TPU and installed packages
+pylex doctor --install  # runs the recommended pip command (asks first)
+```
+
+`pylex doctor` prints the hardware it found, the runtime packages already installed, and the exact command to run. From Python the same thing is available as `pylex.doctor()`. If you run `pylex` before any OCR runtime is installed, the error message already contains the right command for your machine.
+
+### Which CUDA version do I have?
+
+Run `nvidia-smi` and read **CUDA Version** in the top-right corner. That is the newest CUDA your **driver** supports, which is what matters here. You do not need the CUDA toolkit installed: the `gpu` profiles pull the CUDA and cuDNN runtime libraries from pip.
+
+- **13.x or newer** → `[gpu]`. ONNX Runtime's documentation says its CUDA 13.0 builds require CUDA 13.0 or newer, and that PyPI's `onnxruntime-gpu` has been built with CUDA 13.0 by default since version 1.27.
+- **12.x** → `[gpu-cu12]`, which pins ONNX Runtime below 1.27. The same documentation says builds made with CUDA 12.8 require CUDA 12.8 or newer, so if the GPU check below fails on an older 12.x driver, update the driver.
+- **11.x or older** → the ONNX Runtime GPU builds Pylex installs target CUDA 12 and 13. Update the driver, or use the CPU profile.
+
+### Check that the GPU is really used
+
+Having `onnxruntime-gpu` installed does not prove CUDA loads. ONNX Runtime silently falls back to the CPU if a CUDA or cuDNN library is missing, and Pylex hides backend output, so verify explicitly:
+
+```bash
+pylex doctor --verify-gpu
+```
+
+It builds a tiny model and asks ONNX Runtime which provider it actually registered. `OK - CUDAExecutionProvider is active` means you are on the GPU. Then run `pylex scan.pdf --device gpu -v`, or in Python `Config(device="gpu")`. See [Using a GPU](cli.md#using-a-gpu) and [GPU in the SDK](python-api.md#gpu-in-the-sdk).
+
+## Installing from a local build
+
+To install exactly what is in your checkout, without GitHub or PyPI:
+
+```bash
+python -m pip install build
+python -m build                                   # creates dist/pylex_ocr-<version>-py3-none-any.whl
+python -m pip install "dist/pylex_ocr-2.0.0-py3-none-any.whl[cpu]"
+pylex doctor
+```
+
+Use the file name that `build` printed, and swap `[cpu]` for another profile if needed. For development with tests:
+
+```bash
+git clone https://github.com/voltvirtuoso/pylex.git
+cd pylex
+python -m pip install -e ".[cpu,dev]"
+pytest
+```
+
+## Use a virtual environment
+
+OCR runtimes are large and version-sensitive. Keep Pylex in its own environment:
+
+```bash
+python -m venv .venv
+source .venv/bin/activate        # Windows: .venv\Scripts\activate
+python -m pip install "pylex-ocr[cpu] @ git+https://github.com/voltvirtuoso/pylex.git"
+```
+
+## Paddle GPU build (alternative to ONNX Runtime)
+
+Pylex can also run on the GPU through PaddlePaddle's own CUDA build, instead of ONNX Runtime. PyPI only carries `paddlepaddle-gpu` up to version 2.6.2 (checked October 2026); the 3.x GPU builds come from Paddle's own package index, so a pip extra cannot select them and you install in two steps. Copy the exact command for your CUDA version and platform from [Paddle's installation guide](https://www.paddlepaddle.org.cn/documentation/docs/en/install/index_en.html); it has the form:
+
+```bash
+python -m pip install paddlepaddle-gpu==<version> -i <package-index-url-from-the-guide>
+python -m pip install "pylex-ocr @ git+https://github.com/voltvirtuoso/pylex.git" "paddleocr>=3.0,<4"
+```
+
+Do **not** use a profile here: `[cpu]`, `[intel]` and the `[gpu]` profiles also install the CPU `paddlepaddle`, which conflicts with `paddlepaddle-gpu`. Leave `onnxruntime` out as well, or add `--inference-engine paddle_dynamic` so Pylex does not pick it. This route needs a system CUDA setup that matches the wheel. For most people the `[gpu]` profile is simpler.
+
+## Other accelerators
+
+PaddleOCR can target several accelerator types through its device setting, and Pylex passes the value through on the Paddle runtimes:
+
+```bash
+pylex scan.pdf --device npu:0 --inference-engine paddle_dynamic
+```
+
+Accepted device types are `xpu`, `npu`, `mlu`, `gcu`, `dcu`, `iluvatar_gpu` and `metax_gpu`, the device names PaddleOCR and PaddleX document. Each needs the matching hardware build of PaddlePaddle, installed from Paddle's instructions for that hardware. **This path is passed through but has not been tested by the Pylex project**, so treat it as experimental.
+
+### What Pylex does not use
+
+| Hardware | Status |
+|---|---|
+| **Google TPU** | **Not supported.** PaddleOCR's documented hardware list does not include TPUs, and Pylex has no TPU code path. On a TPU machine Pylex can only use the host CPU: install `[cpu]`. `pylex doctor` detects TPU environments from environment variables and says so. |
+| **Apple Silicon** (Metal, Neural Engine) | Pylex's extras run on the CPU; no Metal or Core ML provider is wired in. PaddleOCR documents Apple Silicon support through Paddle's own builds, which Pylex has not tested. |
+| **AMD GPUs** (ROCm) | Pylex's extras run on the CPU; no ROCm runtime is included. PaddleOCR documents AMD GPU support through Paddle's own builds, which Pylex has not tested. |
+| **Windows DirectML** | Not wired in. Runs on the CPU. |
+
+## First run: models are downloaded
+
+The first OCR run downloads the detection and recognition models and caches them under `~/.paddlex/official_models`. After that, no network is needed.
+
+- The default download source is Hugging Face. To change it, set `PADDLE_PDX_MODEL_SOURCE` to `huggingface`, `modelscope`, `aistudio` or `bos` before running.
+- To skip the connectivity check, set `PADDLE_PDX_DISABLE_MODEL_SOURCE_CHECK=True`.
+- For an offline machine, run Pylex once on a connected machine and copy the `~/.paddlex` folder across.
+
+The first run with OpenVINO is also slower while the runtime compiles the models. It caches the result (see `--runtime-cache-dir`).
+
+## Switching profiles
+
+To move from one profile to another, remove every ONNX Runtime package and then install the new profile:
+
+```bash
+python -m pip uninstall -y onnxruntime onnxruntime-gpu onnxruntime-openvino
+python -m pip install "pylex-ocr[gpu] @ git+https://github.com/voltvirtuoso/pylex.git"
+```
+
+`pylex doctor` detects when more than one is installed and prints this for you.
+
+## Check the installation
+
+```bash
+pylex --version
+pylex doctor
+```
+
+```python
+import pylex
+print(pylex.__version__)
+print(pylex.doctor())
+```
+
+The status line reads **ready** when the packages and providers match the recommended profile. If something is off, the report says what to change. See also [Troubleshooting](troubleshooting.md).
+
+---
+
+# Quickstart
+
+Five minutes from nothing to a searchable PDF, once from the command line and once from Python. Install first: [Installation](installation.md).
+
+```bash
+python -m pip install "pylex-ocr[cpu] @ git+https://github.com/voltvirtuoso/pylex.git"   # or [gpu], [gpu-cu12], [intel]
+```
+
+## Command line
+
+### One scanned PDF
+
+```bash
+pylex scan.pdf -o scan-searchable.pdf
+```
+
+Without `-o`, Pylex writes `scan.ocr.pdf` next to the input. The first run downloads models, so it is slower than later runs. Open the output in any viewer and search or select text: the page looks the same, with an invisible text layer on top.
+
+### An image
+
+```bash
+pylex page.png -o page-searchable.pdf
+```
+
+PNG, JPEG, TIFF, BMP and WebP become single-page searchable PDFs.
+
+### A folder
+
+```bash
+pylex scans/ -r -o out/ -j 4
+```
+
+`-r` recurses, `out/` mirrors the folder structure, `-j 4` processes four files at once. Add `--dry-run` first to preview.
+
+### Dense or crowded pages
+
+```bash
+pylex drawing.pdf --tile-size 1000 --tile-overlap 250
+pylex drawing.pdf --det-box-thresh 0.45 --det-unclip-ratio 2.0   # text touching line art
+```
+
+### Use a GPU
+
+```bash
+pylex doctor --verify-gpu      # confirm CUDA really loads
+pylex scan.pdf --device gpu    # or --device auto
+```
+
+Keep `-j 1` with a GPU: worker processes compete for its memory.
+
+## Python
+
+```python
+from pylex import Config, create_engine, extract_text
+
+config = Config(model_size="small")
+engine = create_engine(config)          # load once, reuse
+
+for region in extract_text("page.png", config=config, engine=engine):
+    print(f"{region.confidence:.2f}  {region.text}")
+```
+
+Each region has `text`, a `confidence` from 0 to 1, and a four-corner `polygon` in the image's pixel coordinates.
+
+```python
+from pylex import create_searchable_document
+
+result = create_searchable_document("input.pdf", "output.pdf", config=config, engine=engine)
+if not result.ok:
+    raise RuntimeError(result.error)
+print(result.pages_processed, "pages,", result.lines_added, "lines")
+```
+
+For a GPU use `Config(device="gpu")`.
+
+## Check the result
+
+OCR is probabilistic. Search for words you know are on the page and look at confidence values for anything important. See [Limitations](limitations.md).
+
+## Next
+
+[CLI reference](cli.md) · [Python SDK](python-api.md) · [Accuracy and benchmarks](accuracy-and-benchmarks.md) · [Troubleshooting](troubleshooting.md)
+
+---
+
+# Python SDK
+
+Pylex is a library as well as a command. Everything the CLI does is available from Python, with the same install ([Installation](installation.md)).
+
+```python
+from pylex import Config, create_engine, extract_text, create_searchable_document
+```
+
+## The three objects you need
+
+- **`Config`**: every setting, as a dataclass with sensible defaults.
+- **engine**: the loaded OCR backend from `create_engine(config)`. Loading is slow (seconds); create it once and reuse it.
+- **results**: `TextRegion` objects from `extract_text`, or a `FileResult` from `create_searchable_document`.
+
+## extract_text
+
+```text
+extract_text(source, *, config=None, engine=None, on_tile=None, on_tile_done=None) -> list[TextRegion]
+```
+
+`source` can be a file path, a PIL image, or a NumPy array (2-D grayscale or 3-D RGB; an alpha channel is dropped). NumPy arrays are assumed to be RGB. Large images are processed in overlapping tiles according to the config, and results are merged back into whole-image coordinates.
+
+```python
+config = Config(model_size="small")
+engine = create_engine(config)
+regions = extract_text("page.png", config=config, engine=engine)
+for r in regions:
+    print(r.text, r.confidence, r.polygon.tolist())
+```
+
+### TextRegion
+
+| Attribute | Type | Meaning |
+|---|---|---|
+| `text` | `str` | Recognized text for one line. |
+| `confidence` | `float` | OCR confidence, 0 to 1. A signal, not proof of correctness. |
+| `polygon` | `ndarray` (4, 2) | Four corner points `(x, y)` in original image pixels. |
+
+Regions are lines of text, not a document model: reading order, tables and headings are not reconstructed.
+
+## create_searchable_document
+
+```text
+create_searchable_document(input_path, output_path, *, config=None, engine=None,
+                           on_page=None, on_stage=None, on_tile=None, on_tile_done=None) -> FileResult
+```
+
+Takes a PDF or image and writes a searchable PDF.
+
+| Attribute | Meaning |
+|---|---|
+| `ok` | `True` when the output was written. |
+| `pages_processed` | Pages that were OCR'd (pages excluded by `page_ranges` are copied, not counted). |
+| `lines_added` | Text lines placed in the invisible layer. |
+| `error` | Error text when `ok` is false. |
+| `elapsed` | Seconds. |
+| `input_path`, `output_path` | The paths used. |
+| `failed_pages` | 1-based pages whose OCR raised an error. Those pages are kept unchanged, without a text layer. |
+
+A file can report `ok=True` and still have entries in `failed_pages`, so check it when completeness matters. The CLI exits with status 1 in that case.
+
+## Callbacks
+
+| Callback | Called with | When |
+|---|---|---|
+| `on_page(page, n_pages)` | ints | After each PDF page, including skipped ones. |
+| `on_stage(text)` | str | Stage changes such as "Rendering page 2/10" or "Running OCR". |
+| `on_tile(n, total)` | ints | Before a tile starts. |
+| `on_tile_done(n, total)` | ints | After a tile finishes. |
+
+```python
+from pylex import create_searchable_document
+create_searchable_document("in.pdf", "out.pdf", config=config, engine=engine,
+                           on_page=lambda p, n: print(f"page {p}/{n}"))
+```
+
+`on_tile` and `on_tile_done` apply to images; PDFs report through `on_page` and `on_stage`.
+
+## Lower-level functions
+
+`process_pdf(engine, input_path, output_path, cfg, on_page=None, on_stage=None)` and `process_image(engine, input_path, output_path, cfg, on_stage=None, on_tile=None, on_tile_done=None)` do the work directly. They take `pathlib.Path` arguments and a `Config`, and return a `FileResult`.
+
+## GPU in the SDK
+
+```python
+config = Config(device="gpu")          # "gpu:1" for a specific card, "auto" to use one if present
+engine = create_engine(config)
+regions = extract_text("page.png", config=config, engine=engine)
+```
+
+If the GPU is not usable, a warning explains why and the engine runs on the CPU (set `allow_runtime_fallback=False` to raise instead). Check beforehand:
+
+```python
+import pylex
+print(pylex.doctor())                          # readable report and install command
+hw, rec = pylex.doctor(as_text=False)          # HardwareReport, Recommendation
+ok, detail = pylex.verify_gpu()                # does CUDA really load?
+```
+
+`rec.commands` is the list of pip commands for this machine and `rec.ready` says whether it is already set up. Google TPUs are not supported; see [Installation](installation.md).
+
+## Recipes
+
+### Draw boxes on an image
+
+```python
+from PIL import Image, ImageDraw
+img = Image.open("page.png").convert("RGB")
+draw = ImageDraw.Draw(img)
+for r in extract_text(img, config=config, engine=engine):
+    draw.polygon([tuple(p) for p in r.polygon.tolist()], outline="red")
+img.save("boxes.png")
+```
+
+### Export JSON
+
+```python
+import json
+data = [{"text": r.text, "confidence": r.confidence, "polygon": r.polygon.tolist()} for r in regions]
+json.dump(data, open("page.json", "w"), ensure_ascii=False, indent=2)
+```
+
+### Text from a PDF page without making a PDF
+
+`extract_text` reads images, so render the page first:
+
+```python
+import pypdfium2 as pdfium
+page = pdfium.PdfDocument("doc.pdf")[0]
+image = page.render(scale=300 / 72).to_pil().convert("RGB")
+regions = extract_text(image, config=config, engine=engine)
+```
+
+### Many files
+
+Reuse one engine in a loop. For parallelism use separate processes, each with its own engine (the engine is not safe for concurrent calls from threads); the CLI's `-j` does exactly this.
+
+### Non-Latin searchable PDFs
+
+```python
+config = Config(lang="ru", font="/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf")
+```
+
+For Chinese, Japanese or Korean use a built-in font such as `font="STSong-Light"`.
+
+## Errors
+
+- A missing OCR backend, an unusable device with `allow_runtime_fallback=False`, or unreachable model hosts make `create_engine` raise `pylex.PylexSetupError` (a `RuntimeError`). The message says how to fix it, including the install command for your machine.
+- An unknown `device` or `font` raises `ValueError`.
+
+## Config reference
+
+Pass any of these as keyword arguments to `Config(...)`.
+
+| Field | Default | Meaning |
+|---|---|---|
+| `dpi` | `300` | Render resolution for PDF pages. |
+| `image_dpi` | `300` | Assumed DPI of raster images; sets output page size. |
+| `min_confidence` | `0.5` | Drop lines below this confidence. |
+| `lang` | `'en'` | PaddleOCR language code. |
+| `ocr_version` | `'PP-OCRv6'` | `PP-OCRv4`, `PP-OCRv5` or `PP-OCRv6`. |
+| `model_size` | `'small'` | `tiny`, `small` or `medium` (PP-OCRv6). Note the CLI default is `medium`. |
+| `inference_engine` | `'auto'` | `auto`, `paddle_static`, `paddle_dynamic`, `onnxruntime`, `openvino`. |
+| `enable_hpi` | `False` | PaddleOCR high-performance inference. |
+| `hpi_backend` | `None` | HPI backend: `auto`, `paddle`, `openvino`, `onnxruntime`. |
+| `runtime_cache_dir` | `None` | Cache for compiled OpenVINO/ONNX engines; `None` = platform default. |
+| `allow_runtime_fallback` | `True` | Fall back to another runtime, or to the CPU when a GPU is unusable, instead of failing. |
+| `font` | `'Helvetica'` | Invisible-text font: standard PDF font, built-in CJK font name, or path to a Unicode `.ttf`. |
+| `min_font_size` | `1.0` | Smallest font size in the text layer (pt). |
+| `max_font_size` | `200.0` | Largest font size in the text layer (pt). |
+| `det_limit_side_len` | `8000` | Largest side the detector sees. |
+| `baseline_fraction` | `0.18` | Baseline offset as a fraction of box height. |
+| `min_box_width_pt` | `0.25` | Skip overlay boxes narrower than this. |
+| `min_box_height_pt` | `0.25` | Skip overlay boxes shorter than this. |
+| `use_textline_orientation` | `True` | Run the upside-down line classifier. |
+| `vertical_text_retry` | `True` | Retry tall low-confidence boxes rotated 90 degrees. |
+| `vertical_text_aspect_ratio` | `1.3` | Height/width ratio that marks a box as tall. |
+| `vertical_text_retry_max_confidence` | `0.8` | Only retry boxes below this confidence. |
+| `device` | `None` | `None` (use `use_gpu`), `auto`, `cpu`, `gpu`, `gpu:N`, `cuda`, or a Paddle accelerator type. |
+| `use_gpu` | `False` | Legacy; same as `device="gpu"`. |
+| `disable_mkldnn` | `True` | Keep oneDNN off for static Paddle inference. |
+| `cpu_threads` | `None` | Native threads per process; `None` = backend default. |
+| `orientation_batch_size` | `8` | Orientation classifier batch size. |
+| `recognition_batch_size` | `6` | Recognition batch size. |
+| `fast_mode` | `False` | Fast profile: one pass, no orientation model. |
+| `retry_upscale` | `False` | Retry once at 1.5x when a pass finds nothing. |
+| `page_ranges` | `None` | List of inclusive 1-based `(start, end)` tuples; `None` = all pages. |
+| `tile_size` | `2000` | Tile edge in pixels; `<= 0` disables tiling. |
+| `tile_overlap` | `220` | Tile overlap in pixels. |
+| `tile_batch_size` | `4` | Tiles per backend call. |
+| `adaptive_tiling` | `True` | Skip tiling for `small` models when the image fits the detector and pixel budget. |
+| `full_page_max_pixels` | `8000000` | Pixel budget for the adaptive shortcut. |
+| `dedupe_tol_px` | `20.0` | Duplicate-merge distance for tile overlaps. |
+| `det_thresh` | `None` | Detector pixel-score cutoff. |
+| `det_box_thresh` | `None` | Detector box-score cutoff. |
+| `det_unclip_ratio` | `None` | Detector box expansion ratio. |
+
+`Config` is a plain dataclass, so `dataclasses.replace(config, dpi=200)` makes a modified copy.
+
+---
+
+# CLI reference
+
+```text
+pylex [options] INPUT [INPUT ...]
+pylex doctor [--json] [--verify-gpu] [--install [-y]]
+```
+
+Run `pylex --help` for the authoritative list for your installed version. Inputs are PDF, PNG, JPEG, TIFF, BMP or WebP files, or folders. Output is always a searchable PDF.
+
+## Input and output
+
+- A single file with no `-o` gives `<name>.ocr.pdf` beside the input. Change the suffix with `--suffix`.
+- `-o file.pdf` names the output for a single input.
+- `-o folder/` writes into a folder. With several inputs, or a folder input, `-o` is always treated as a folder, and a folder input has its structure mirrored.
+- Existing outputs are an error unless you pass `--force` (overwrite) or `--skip-existing` (skip).
+- Files are written to a temporary name first and then renamed, so a crash never leaves a half-written PDF.
+
+### Exit codes
+
+| Code | Meaning |
+|---|---|
+| 0 | Every file succeeded |
+| 1 | No matching input, nothing to do, a file failed, or OCR failed on some pages (the file was written but those pages have no text layer) |
+| 2 | Invalid arguments |
+
+## Selecting files
+
+| Option | Meaning |
+|---|---|
+| `inputs` | Files or folders (one or more). |
+| `-r`, `--recursive` | Recurse into subfolders of folder inputs. |
+| `--formats ext,ext` | Only pick up these extensions in folders. Default: all supported. |
+| `-xf`, `--exclude PATTERN` | Skip files matching a wildcard, matched against the file name and relative path (`*` also matches `/`). Repeat it or comma-separate: `-xf '*_draft*,backup/*'`. |
+| `--pages RANGE` | OCR only these 1-based PDF pages, e.g. `1-5,9`. Other pages are copied through unchanged. |
+| `--dry-run` | List inputs and output paths, then exit. |
+| `--skip-existing` | Skip inputs whose output already exists. |
+| `-o`, `--output PATH` | Output file or folder. |
+| `--in-place` | Overwrite each input with its OCR version. Requires `--force`. |
+| `--suffix SUFFIX` | Suffix before `.pdf` when `-o` is absent. Default `.ocr`. |
+| `-f`, `--force` | Overwrite existing outputs. |
+
+## Speed and parallelism
+
+| Option | Default | Meaning |
+|---|---|---|
+| `-j`, `--jobs N` | 1 | Process N files in parallel worker processes, each with its own engine. Pages inside one PDF are always sequential. |
+| `--cpu-threads N` | CPU count ÷ jobs | Native threads per process. |
+| `--fast` | off | One full-page pass, no text-line orientation model, detector capped at 3200 px. For simple images only. |
+| `--recognition-batch-size N` | 6 | Recognition batch size. |
+| `--orientation-batch-size N` | 8 | Text-line orientation batch size. |
+
+## Using a GPU
+
+```bash
+pylex scan.pdf --device gpu        # first GPU
+pylex scan.pdf --device gpu:1      # second GPU
+pylex scan.pdf --device auto       # GPU if a CUDA runtime is installed, else CPU
+pylex doctor --verify-gpu          # confirm CUDA actually loads
+```
+
+`--gpu` is a shortcut for `--device gpu`. With `auto`, Pylex picks ONNX Runtime when it has the CUDA provider, otherwise Paddle's GPU build. If you ask for a GPU that isn't usable, Pylex prints why and the fix, then continues on the CPU. Add `--no-runtime-fallback` to stop instead. Use `-j 1` with a GPU; Pylex warns if you don't. Install steps are in [Installation](installation.md).
+
+## OCR options
+
+| Option | Default | Meaning |
+|---|---|---|
+| `--device DEV` | cpu | `auto`, `cpu`, `gpu`, `gpu:N`, or a Paddle accelerator type (`xpu`, `npu`, `mlu`, `gcu`, `dcu`, ...). |
+| `--gpu` | off | Shortcut for `--device gpu`. |
+| `--dpi N` | 300 | Resolution used to render PDF pages for OCR. |
+| `--image-dpi N` | 300 | Assumed DPI of raster inputs; sets the output page size. |
+| `--lang CODE` | en | PaddleOCR language code. |
+| `--ocr-version` | PP-OCRv6 | `PP-OCRv4`, `PP-OCRv5` or `PP-OCRv6`. |
+| `--model-size` | **medium** | `tiny`, `small` or `medium` (PP-OCRv6 tiers). The Python `Config()` default is `small`. |
+| `--inference-engine` | auto | `auto`, `paddle_static`, `paddle_dynamic`, `onnxruntime`, `openvino`. Auto prefers OpenVINO, then ONNX Runtime, then dynamic Paddle on CPU. |
+| `--min-confidence F` | 0.5 | Drop lines below this confidence. |
+| `--det-limit-side-len N` | 8000 | Largest side the detector sees. |
+| `--no-textline-orientation` | off | Disable the upside-down line classifier. |
+| `--no-vertical-text-retry` | off | Disable the 90-degree retry for tall low-confidence boxes. |
+| `--retry-upscale` | off | If a pass finds nothing, retry once at 1.5x. |
+| `--runtime-cache-dir PATH` | platform cache | Where OpenVINO/ONNX store compiled engines. |
+| `--enable-mkldnn` | off | oneDNN for static Paddle CPU inference. |
+| `--enable-hpi`, `--hpi-backend` | off | PaddleOCR high-performance inference. Linux-oriented; not combinable with a non-auto `--inference-engine`. |
+| `--no-runtime-fallback` | off | Fail instead of falling back to another runtime or the CPU. |
+
+## Dense-document tuning
+
+| Option | Default | Meaning |
+|---|---|---|
+| `--tile-size PX` | 2000 | OCR in overlapping PX-sized windows at full resolution. Try 900-1200 for crowded drawings. `0` disables tiling. |
+| `--tile-overlap PX` | 220 | Overlap between tiles. Must be smaller than the tile size. |
+| `--no-tile` | off | Same as `--tile-size 0`. |
+| `--strict-tiling` | off | Always tile; turns off the adaptive full-page shortcut (which applies only to `--model-size small`). |
+| `--dedupe-tol-px F` | 20 | Same text with centers closer than this is treated as an overlap duplicate. |
+| `--det-thresh F` | unset | Detector pixel-score cutoff. |
+| `--det-box-thresh F` | unset | Lower (0.4-0.5) recovers weak detections in crowded areas. |
+| `--det-unclip-ratio F` | unset | Higher (1.8-2.2) expands boxes for text touching line art. |
+
+## Invisible text layer
+
+| Option | Default | Meaning |
+|---|---|---|
+| `--font` | Helvetica | Helvetica covers Latin-1 only. For other scripts pass a Unicode `.ttf` path (DejaVuSans.ttf for Cyrillic/Greek) or a built-in CJK font: `STSong-Light`, `MSung-Light`, `HeiseiMin-W3`, `HeiseiKakuGo-W5`, `HYSMyeongJo-Medium`, `HYGothic-Medium`. |
+| `--baseline-fraction F` | 0.18 | Baseline offset as a fraction of box height. |
+
+Example for Russian: `pylex scan.pdf --lang ru --font /usr/share/fonts/truetype/dejavu/DejaVuSans.ttf`. Right-to-left scripts (Arabic, Hebrew) have not been verified.
+
+## Output and logging
+
+| Option | Meaning |
+|---|---|
+| `-v`, `-vv` | Info or debug logging. `-v` also shows the selected runtime. |
+| `-q`, `--quiet` | Warnings and errors only. |
+| `--version` | Print the version. |
+
+## pylex doctor
+
+```bash
+pylex doctor                  # report and recommended install command
+pylex doctor --json           # machine-readable
+pylex doctor --verify-gpu     # confirm CUDA loads; exit code 1 if not
+pylex doctor --install -y     # run the recommended pip commands
+```
+
+It reports CPU, NVIDIA GPU and driver CUDA version, TPU environments (not usable), installed runtime packages, and ONNX Runtime providers. A file literally named `doctor` can be passed as `./doctor`.
+
+## Environment variables
+
+| Variable | Effect |
+|---|---|
+| `PADDLE_PDX_MODEL_SOURCE` | Model download source: `huggingface` (default), `modelscope`, `aistudio`, `bos`. |
+| `PADDLE_PDX_DISABLE_MODEL_SOURCE_CHECK` | Set `True` to skip the connectivity check. |
+| `OMP_NUM_THREADS`, `MKL_NUM_THREADS`, `OPENBLAS_NUM_THREADS` | Set from `--cpu-threads` unless already set. |
+
+## Recipes
+
+```bash
+pylex scans/ -r -o out/ -j 4 --skip-existing          # resumable batch
+pylex big.pdf --pages 1-10 --dpi 200                  # quick look at part of a file
+pylex simple.png --fast --retry-upscale               # fast pass on a clean image
+pylex scans/ -r -xf '*_OCR*' -xf 'backup/*'           # skip earlier outputs
+pylex file.pdf --in-place --force                     # replace the original
+```
+
+---
+
+# How it works
+
+Pylex turns a page into a searchable page without changing how it looks. Each file goes through the same stages.
+
+## 1. Render
+
+A PDF page is rendered with pypdfium2 at `--dpi` (default 300), **exactly as a viewer displays it**, with the page's `/Rotate` value applied. A raster image is loaded as is.
+
+## 2. Detect and recognize
+
+The image goes to PaddleOCR models (PP-OCRv6 by default): a detector finds text lines, an optional classifier flips upside-down lines, and a recognizer reads each line. Pylex runs these through one of the runtimes below.
+
+| Runtime | When it is used |
+|---|---|
+| ONNX Runtime (CPU or CUDA) | Auto choice when installed. Fastest in the project's measurements on CPU. |
+| ONNX Runtime with OpenVINO | Auto choice when the OpenVINO build is installed (`[intel]`). |
+| Paddle dynamic | Fallback when ONNX Runtime is absent, or when only `paddlepaddle-gpu` provides the GPU. |
+| Paddle static | Only if requested explicitly. Can hit oneDNN operator errors on some builds. |
+
+With a GPU requested, auto selects ONNX Runtime if it has the CUDA provider, otherwise Paddle's GPU build; if neither exists it explains the fix and continues on the CPU.
+
+## 3. Tiling for dense pages
+
+A whole-page pass shrinks the page to the detector's size limit, which can make small labels squeezed between symbols too small to detect. Pylex instead cuts large pages into overlapping tiles (`--tile-size`, default 2000 px; `--tile-overlap`, default 220 px), runs OCR on each at full resolution, shifts the results back into page coordinates, and merges duplicates: the same text whose centers lie within `--dedupe-tol-px` is kept once, with the highest confidence.
+
+Images no larger than one tile are not tiled. For `--model-size small`, an adaptive shortcut also skips tiling when the image fits the detector limit and 8 megapixels; `--strict-tiling` turns that off.
+
+## 4. Vertical text retry
+
+The orientation classifier only distinguishes 0 and 180 degrees, so text running vertically is often misread. When a tile contains tall, low-confidence boxes, Pylex re-runs that tile rotated 90 degrees and merges the better results. Disable with `--no-vertical-text-retry`.
+
+## 5. Build the invisible layer
+
+For each recognized line, Pylex draws the text in PDF text render mode 3 (invisible). The font size comes from the box height, the horizontal scale stretches the text to the box width, and the angle follows the polygon. Each line is anchored at the **start** of its polygon, so long text cannot drift off the page.
+
+## 6. Merge without disturbing the page
+
+For rotated PDF pages, Pylex first transfers `/Rotate` into the page content, so the overlay and the OCR image share one orientation, then merges the overlay onto the original page. The visible content is never re-rendered or re-compressed. Output is written to a temporary file and renamed.
+
+## Parallelism
+
+`-j N` runs N worker processes, each loading its own engine. Pages inside one PDF are sequential. CPU threads are divided between workers automatically unless you set `--cpu-threads`.
+
+## Fonts
+
+The text layer uses Helvetica by default, which covers Latin-1. Other scripts need `--font` with a Unicode TrueType file or a built-in CJK font. See [CLI reference](cli.md).
+
+---
+
+# Accuracy and benchmarks
+
+Speed and quality depend on the document, resolution, language, model, runtime and hardware. Use this page to choose settings, and to publish measurements that others can reproduce.
+
+## Choosing settings
+
+| Goal | Start with | Trade-off |
+|---|---|---|
+| Best general accuracy | CLI default (`--model-size medium`) | More CPU time and memory |
+| Balanced speed | `--model-size small` | Adaptive full-page pass for images up to 8 MP |
+| Simple, clean image, fastest | `--fast` | Weaker on dense, rotated or noisy pages |
+| Dense or large drawings | default tiling; try `--tile-size 1000` | More passes, better small-text recall |
+| Text touching line art | `--det-box-thresh 0.45 --det-unclip-ratio 2.0` | More false positives |
+| Faint or tiny text | `--retry-upscale`, higher `--dpi` | More time |
+| Many files, CPU | `-j N` | Each worker owns an engine and memory |
+| NVIDIA GPU | `--device gpu -j 1` | Needs a GPU profile; see Installation |
+
+Note the default model differs: the CLI uses `medium`, while `Config()` in Python uses `small`.
+
+## Measurements recorded by the project
+
+These come from the author's notes (`runtime_research.md`, `CHANGELOG.md`), measured in a sandbox. They are directional, not guarantees.
+
+| Workload | Runtime | Result |
+|---|---|---|
+| 1845x832 image, 102 lines, PP-OCRv6 small, orientation on | Paddle dynamic | 10.29 s |
+| Same | ONNX Runtime | 0.81 to 0.95 s |
+| Same | ONNX Runtime + OpenVINO | 1.06 s |
+| A1 P&ID at 300 DPI, 2000 px tiles | OpenVINO | 24 tiles, 265 detections, 10.7 s |
+
+OpenVINO was not faster than plain ONNX Runtime in these runs, so benchmark both on Intel hardware. **GPU timings have not been published**; measure on your own card.
+
+## Comparison with other tools
+
+`benchmarks/compare.py` builds scan-like test pages with known word positions, runs Pylex, OCRmyPDF with Tesseract, and OCRmyPDF with the `ocrmypdf-paddleocr` plugin from PyPI (`ocrmypdf --plugin ocrmypdf_paddleocr`; OCRmyPDF's own page also lists a different PaddleOCR plugin, so say which one you used), and scores each text layer:
+
+- **Recall**: share of true words whose text appears in the layer, wherever it is.
+- **Aligned**: share found in the right place (word centre within 0.6 line-heights vertically and 4 horizontally).
+- **Extra**: OCR words that match no true word.
+
+Cases: a plain text page, a dense page of small labels with line work, and the plain page stored sideways with `/Rotate 90` and `/Rotate 270`. Every test word carries a unique tag so chance matches stay near zero. The scoring itself is verified with a perfect-text-layer oracle at all four rotations (`--self-test`).
+
+```bash
+python benchmarks/compare.py                                   # every installed tool
+python benchmarks/compare.py --only pylex --pylex-args "--device gpu"
+python benchmarks/compare.py --input-dir my-scans/             # your own files: timing and word counts
+```
+
+### Result so far: OCRmyPDF with Tesseract
+
+Measured on a single-core Linux sandbox, OCRmyPDF 17.13 with Tesseract 5 and the English model. Synthetic pages, so read these as a baseline for the harness, not as a verdict on any tool.
+
+| Case | Seconds | Recall | Aligned | Extra |
+|---|---:|---:|---:|---:|
+| Plain text page | 4.8 | 99% | 99% | 1% |
+| Dense labels and line work | 10.9 | 83% | 70% | 20% |
+| Plain page, `/Rotate 90` | 4.9 | 100% | 100% | 0% |
+| Plain page, `/Rotate 270` | 5.1 | 100% | 100% | 0% |
+
+What this shows: in these tests OCRmyPDF places text correctly on rotated pages, so correct rotation handling looks like a baseline requirement, not a Pylex advantage. The place to look for a difference is dense, sparse-label pages, where Tesseract's page layout analysis struggled (70% aligned, 20% extra words).
+
+**Pylex and the PaddleOCR plugin have not been run through it yet.** The environment this harness was developed in could not download PaddleOCR models, so those rows are empty rather than guessed. Run the command above on your machine and add the table here.
+
+## Reporting your own benchmark
+
+Record the Pylex, Python and OS versions; CPU or GPU and RAM; input format, page count and resolution; language, model size and runtime (`pylex doctor` prints most of this); tiling options, worker count; and whether the run was cold (model download, compilation) or warm.
+
+| Workload | Input | Model / runtime | Options | Cold | Warm | Quality metric |
+|---|---|---|---|---:|---:|---:|
+| Simple image | | | default | | | |
+| Dense document | | | tile size, overlap | | | |
+| Searchable PDF | | | dpi, workers | | | |
+
+## Measuring quality
+
+Use a permission-cleared validation set and report a defined metric such as character or word error rate. Keep evaluation data separate from the data you tuned on. For searchable PDFs also test text-layer alignment on rotated pages. Do not generalize from one document or one machine.
+
+---
+
+# Limitations
+
+Pylex runs OCR on raster images and rendered PDF pages, then adds the recognized text to a searchable PDF or returns regions through the Python API. It suits scans, screenshots, forms, receipts, diagrams, technical drawings and photographs.
+
+## OCR is probabilistic
+
+Results can be wrong for handwriting, very small, blurred, skewed, noisy, low-contrast or occluded text, and for languages without the right model. Confidence scores help find uncertain regions but do not prove correctness. Validate output on representative documents when errors have operational, legal, safety or financial consequences.
+
+## What Pylex does not do
+
+- No handwriting recognition, translation, table reconstruction, semantic headings or guaranteed reading order.
+- No PDF/A output, deskewing or image clean-up. If you need those, OCRmyPDF is a better fit.
+- It is a library and CLI, not a hosted OCR service.
+
+## Scripts and fonts
+
+The invisible text layer defaults to Helvetica, which covers Latin-1. Other scripts need `--font` with a Unicode `.ttf` or a built-in CJK font. Right-to-left scripts such as Arabic and Hebrew are not verified: shaping and ordering in the text layer may not match what a reader expects.
+
+## Hardware
+
+CPUs and NVIDIA GPUs (CUDA, through the `[gpu]` profiles) are what Pylex's install profiles support. Google TPUs are not supported. Apple Silicon, AMD and DirectML GPUs run on the CPU in Pylex. Other Paddle accelerator types are passed through to PaddleOCR but untested.
+
+## Failure handling
+
+If OCR fails on a PDF page, Pylex keeps the page unchanged, logs a warning and records it in `FileResult.failed_pages`; the file is still written. The CLI then exits with status 1 and names the pages. `create_engine` raises `PylexSetupError` when no backend is installed.
+
+## Sensitive documents
+
+Process sensitive files in an appropriate environment and do not attach them to public issues. Models are downloaded on first use; after that no network is needed.
+
+---
+
+# Troubleshooting
+
+Start with `pylex doctor`. It lists the hardware found, the packages installed, and the command to fix the setup.
+
+## "paddleocr is not installed"
+
+No OCR runtime is installed. The message includes the command for your machine; or run `pylex doctor --install`. Do not install a package called plain `pylex` (an unrelated project).
+
+## `pip` says "No matching distribution found" for `pylex-ocr`
+
+Pylex is not on PyPI yet, so a plain `pylex-ocr` requirement cannot be found. Install from GitHub instead: `pip install "pylex-ocr[cpu] @ git+https://github.com/voltvirtuoso/pylex.git"`.
+
+## I asked for the GPU but it runs on the CPU
+
+Pylex prints a warning saying why. Common causes:
+
+- **Plain `onnxruntime` is installed.** It has no CUDA. Run `pip uninstall -y onnxruntime`, then `pip install "pylex-ocr[gpu] @ git+https://github.com/voltvirtuoso/pylex.git"`.
+- **Two ONNX Runtime packages are installed.** `doctor` flags this. Uninstall all of `onnxruntime`, `onnxruntime-gpu`, `onnxruntime-openvino`, then install one profile.
+- **CUDA libraries did not load.** Run `pylex doctor --verify-gpu`. If it says the provider is listed but did not load, your driver is probably too old for the build. Check `nvidia-smi`: CUDA 13 needs `[gpu]`, CUDA 12 needs `[gpu-cu12]`.
+- **No NVIDIA GPU.** Intel, AMD and Apple hardware run on the CPU in Pylex, and TPUs are not supported. See [Installation](installation.md).
+
+To confirm the GPU is busy while a job runs, watch `nvidia-smi`.
+
+## `--gpu` is slower with `-j 4`
+
+Workers share one GPU and compete for memory. Use `-j 1` with a GPU.
+
+## The search finds nothing, or text is garbled
+
+- **Non-Latin scripts** (Russian, Greek, Chinese, Arabic...) need `--font`. The default font only covers Latin-1, and Pylex logs a warning when it meets other characters.
+- **No text detected:** try `--retry-upscale`, a higher `--dpi`, or lower `--det-box-thresh`.
+- **A page was kept unchanged:** if OCR fails on a page, Pylex logs a warning, keeps the page without text, and exits with status 1 naming the pages (`FileResult.failed_pages` in Python). Run with `-v` to see the cause.
+
+## Small labels are missed on a dense drawing
+
+Use smaller tiles and a more tolerant detector: `--tile-size 1000 --tile-overlap 250 --det-box-thresh 0.45 --det-unclip-ratio 2.0`.
+
+## The first run is very slow
+
+Models are being downloaded (cached in `~/.paddlex/official_models`), and OpenVINO compiles models on first use. Later runs are faster. Choose a different download host with `PADDLE_PDX_MODEL_SOURCE=modelscope` (or `aistudio`, `bos`), or copy `~/.paddlex` from a connected machine for offline use.
+
+## "No available model hosting platforms detected"
+
+Pylex prints "could not download its OCR models". The machine cannot reach any model host. Allow access to one of them, set `PADDLE_PDX_MODEL_SOURCE`, or copy a populated `~/.paddlex`.
+
+## Output already exists
+
+Pass `--force` to overwrite or `--skip-existing` to skip.
+
+## oneDNN or PIR errors with Paddle static
+
+Use the default runtime, or `--inference-engine paddle_dynamic`. Pylex retries dynamic Paddle automatically unless `--no-runtime-fallback` is set.
+
+## Reporting a problem
+
+Include `pylex --version`, the output of `pylex doctor`, the exact command, the input type and resolution, and a redacted or synthetic example. See [CONTRIBUTING](https://github.com/voltvirtuoso/pylex/blob/main/CONTRIBUTING.md).

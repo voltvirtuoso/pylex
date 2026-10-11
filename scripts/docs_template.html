@@ -3,57 +3,101 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Pylex documentation</title>
-<meta name="description" content="Pylex: Python OCR and searchable PDFs. Python SDK and CLI documentation.">
+<title>Pylex documentation: Python OCR for searchable PDFs</title>
+<meta name="description" content="Pylex is a Python OCR library and command-line tool that makes scanned PDFs searchable and extracts text from images. Runs on CPU and NVIDIA GPU. Python SDK and CLI documentation.">
+<meta name="robots" content="index,follow,max-snippet:-1">
+<meta name="theme-color" content="#210100">
+<link rel="canonical" href="https://voltvirtuoso.github.io/pylex/">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%23210100'/%3E%3Crect x='6' y='6' width='8' height='20' fill='%238c0902'/%3E%3Crect x='14' y='6' width='12' height='8' fill='%23e0c58f'/%3E%3C/svg%3E">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Pylex">
+<meta property="og:title" content="Pylex: Python OCR for searchable PDFs">
+<meta property="og:description" content="Make scanned PDFs searchable and extract text from images. Python SDK and CLI. CPU and NVIDIA GPU.">
+<meta property="og:url" content="https://voltvirtuoso.github.io/pylex/">
+<meta property="og:image" content="https://voltvirtuoso.github.io/pylex/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Pylex: Python OCR for searchable PDFs">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Pylex: Python OCR for searchable PDFs">
+<meta name="twitter:description" content="Make scanned PDFs searchable and extract text from images. Python SDK and CLI. CPU and NVIDIA GPU.">
+<meta name="twitter:image" content="https://voltvirtuoso.github.io/pylex/og.png">
+<script type="application/ld+json">
+{
+ "@context": "https://schema.org",
+ "@type": "SoftwareSourceCode",
+ "name": "Pylex",
+ "description": "Pylex is a Python OCR library and command-line tool that makes scanned PDFs searchable and extracts text from images. Runs on CPU and NVIDIA GPU. Python SDK and CLI documentation.",
+ "url": "https://voltvirtuoso.github.io/pylex/",
+ "codeRepository": "https://github.com/voltvirtuoso/pylex",
+ "programmingLanguage": "Python",
+ "license": "https://opensource.org/licenses/MIT",
+ "author": {
+  "@type": "Person",
+  "name": "Haroon Raza"
+ }
+}
+</script>
 <style>
-:root{--bg:#f6f8fb;--ink:#1b2430;--mute:#5a6675;--line:#d8dee8;--nav:#0e2a47;--navink:#c9d6e6;--red:#d0342c;--link:#1d5fa8;--code:#e9eef5;--pre:#0f1b2b;--preink:#dbe6f3;
+:root{--bg:#f5f0e9;--ink:#210100;--mute:#6a5750;--line:#d6c8ad;--nav:#210100;--navink:#eadfcf;--navmute:#c9b58f;--navline:rgba(224,197,143,.35);--red:#8c0902;--tan:#e0c58f;--acc:#8c0902;--link:#8c0902;--code:#ece3d1;--pre:#210100;--preink:#f5f0e9;
 --ui:"Avenir Next","Segoe UI",system-ui,-apple-system,sans-serif;--serif:Charter,"Iowan Old Style","Palatino Linotype",Georgia,serif;--mono:ui-monospace,"SF Mono",Menlo,Consolas,monospace}
 :root:not([data-theme=light]){color-scheme:light dark}
-@media(prefers-color-scheme:dark){:root:not([data-theme=light]){--bg:#0f1620;--ink:#e3e9f1;--mute:#98a5b6;--line:#26323f;--nav:#0a1a2d;--link:#6fb0f0;--code:#1a2636}}
-:root[data-theme=dark]{--bg:#0f1620;--ink:#e3e9f1;--mute:#98a5b6;--line:#26323f;--nav:#0a1a2d;--link:#6fb0f0;--code:#1a2636}
+@media(prefers-color-scheme:dark){:root:not([data-theme=light]){--bg:#1b0100;--ink:#f5f0e9;--mute:#bfae9c;--line:#4a2a22;--nav:#120000;--acc:#e0c58f;--link:#e0c58f;--code:#2e0f0b;--pre:#120000}}
+:root[data-theme=dark]{--bg:#1b0100;--ink:#f5f0e9;--mute:#bfae9c;--line:#4a2a22;--nav:#120000;--acc:#e0c58f;--link:#e0c58f;--code:#2e0f0b;--pre:#120000}
+::selection{background:var(--tan);color:#210100}
 *{box-sizing:border-box}html{scroll-behavior:smooth;scroll-padding-top:20px}
 body{margin:0;background:var(--bg);color:var(--ink);font:17px/1.7 var(--serif);padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
 @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
-a{color:var(--link)}a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid var(--red);outline-offset:2px}
+a{color:var(--link);text-underline-offset:3px}a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid var(--acc);outline-offset:2px}
 #side{position:fixed;inset:0 auto 0 0;width:292px;background:var(--nav);color:var(--navink);font:14px/1.4 var(--ui);overflow-y:auto;padding:22px 16px 40px;
-background-image:linear-gradient(rgba(255,255,255,.035) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.035) 1px,transparent 1px);background-size:24px 24px}
-#side .brand{font:700 22px var(--ui);color:#fff;text-decoration:none;display:block;margin-bottom:2px}#side .tag{color:#8fa6c2;font-size:13px;margin-bottom:16px}
-.seg{display:flex;border:1px solid #38577d;border-radius:6px;overflow:hidden;margin-bottom:12px}
-.seg button{flex:1;background:none;border:0;color:var(--navink);padding:7px 4px;font:inherit;cursor:pointer}.seg button[aria-pressed=true]{background:#fff;color:var(--nav);font-weight:600}
-#q{width:100%;padding:8px 10px;border-radius:6px;border:1px solid #38577d;background:#0a2038;color:#fff;font:inherit;margin-bottom:14px}#q::placeholder{color:#7f97b4}
-#side h4{margin:18px 0 4px;font:600 12px var(--ui);color:#8fa6c2;letter-spacing:.02em}
-#side a.d,#side a.s{display:block;color:var(--navink);text-decoration:none;padding:5px 10px 5px 12px;border-left:3px solid transparent;border-radius:0 4px 4px 0}
-#side a.d{font-weight:600;color:#fff}#side a.s{padding-left:26px;font-size:13px;color:#a9bbd2;display:none}
-#side .cur a.s{display:block}#side a.on{border-left-color:var(--red);background:rgba(255,255,255,.07)}#side a:hover{background:rgba(255,255,255,.1)}
+background-image:linear-gradient(rgba(224,197,143,.05) 1px,transparent 1px),linear-gradient(90deg,rgba(224,197,143,.05) 1px,transparent 1px);background-size:24px 24px}
+#side .brand{font:700 22px var(--ui);color:#f5f0e9;text-decoration:none;display:block;margin-bottom:2px}#side .tag{color:var(--navmute);font-size:13px;margin-bottom:16px}
+.seg{display:grid;grid-template-columns:repeat(3,1fr);border:1px solid var(--navline);margin-bottom:12px}
+.seg button{background:none;border:0;border-left:1px solid var(--navline);color:var(--navink);height:38px;padding:0 4px;font:13px/1 var(--ui);white-space:nowrap;cursor:pointer;border-bottom:3px solid transparent}.seg button:first-child{border-left:0}.seg button:hover{background:rgba(224,197,143,.12)}.seg button[aria-pressed=true]{background:#f5f0e9;color:var(--nav);border-bottom-color:var(--red)}
+#q{width:100%;padding:8px 10px;border:1px solid var(--navline);background:#2f0b08;color:#f5f0e9;font:inherit;margin-bottom:14px}#q::placeholder{color:#a89377}
+#side h4{margin:18px 0 4px;font:600 12px var(--ui);color:var(--navmute);letter-spacing:.02em}
+#side a.d,#side a.s{display:block;color:var(--navink);text-decoration:none;padding:5px 10px 5px 12px;border-left:3px solid transparent;}
+#side a.d{font-weight:600;color:#f5f0e9}#side a.s{padding-left:26px;font-size:13px;color:var(--navmute);display:none}
+#side .cur a.s{display:block}#side a.on{border-left-color:var(--tan);background:rgba(224,197,143,.10)}#side a:hover{background:rgba(224,197,143,.14)}
 #side .hide,section.hide{display:none}
 #top{display:none}
 main{margin-left:292px;padding:28px 40px 120px}
 section{max-width:76ch;margin:0 auto;padding-bottom:56px;margin-bottom:56px;border-bottom:1px solid var(--line)}
 section:last-child{border:0}
-.kind{font:600 13px var(--ui);color:var(--red);margin-bottom:4px}
-h1,h2,h3{font-family:var(--ui);line-height:1.2;letter-spacing:-.01em}h1{font-size:38px;margin:.1em 0 .5em}h2{font-size:26px;margin:2em 0 .6em;padding-top:.3em;border-top:1px solid var(--line)}h3{font-size:20px;margin:1.6em 0 .4em}
+.kind{display:inline-block;font:600 12px var(--ui);letter-spacing:.04em;text-transform:uppercase;background:var(--red);color:#f5f0e9;padding:3px 9px;margin-bottom:10px}
+h1,h2,h3{font-family:var(--ui);line-height:1.2;letter-spacing:-.01em}h1{font-size:38px;margin:.1em 0 .6em;padding-bottom:.25em;border-bottom:3px solid var(--ink)}h2{font-size:26px;margin:2em 0 .6em;padding-top:.3em;border-top:1px solid var(--line)}h3{font-size:20px;margin:1.6em 0 .4em}
 h1+p{font-size:19px;color:var(--mute)}
-p,li{hyphens:manual}code{font:.86em var(--mono);background:var(--code);padding:.12em .35em;border-radius:4px}
-.pw{position:relative}pre{background:var(--pre);color:var(--preink);padding:16px 18px;border-radius:8px;overflow-x:auto;font:14px/1.55 var(--mono);margin:1.1em 0}pre code{background:none;padding:0;font-size:inherit}
-.cp{position:absolute;top:8px;right:8px;background:#22344d;color:#dbe6f3;border:1px solid #38577d;border-radius:5px;font:12px var(--ui);padding:3px 9px;cursor:pointer}
+p,li{hyphens:manual}code{font:.86em var(--mono);background:var(--code);padding:.12em .35em;}
+.pw{position:relative}pre{background:var(--pre);color:var(--preink);border-left:4px solid var(--tan);padding:16px 18px;overflow-x:auto;font:14px/1.55 var(--mono);margin:1.1em 0}pre code{background:none;padding:0;font-size:inherit}
+.ib,.cp{display:inline-flex;align-items:center;justify-content:center;background:none;border:1px solid var(--navline);color:#f5f0e9;cursor:pointer;text-decoration:none;position:relative;padding:0}
+.ib{width:36px;height:36px}.cp{position:absolute;top:8px;right:8px;width:32px;height:32px;background:#3a1410}
+.ib:hover,.cp:hover{background:rgba(224,197,143,.16);border-color:var(--tan)}
+.ib svg,.cp svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:square;stroke-linejoin:miter;pointer-events:none}
+[data-tip]:hover::after,[data-tip]:focus-visible::after{content:attr(data-tip);position:absolute;z-index:20;white-space:nowrap;background:var(--tan);color:#210100;font:600 12px/1 var(--ui);padding:6px 9px;pointer-events:none}
+[data-tip]:not([data-pos]):hover::after,[data-pos=bottom]:hover::after{top:calc(100% + 6px);left:50%;transform:translateX(-50%)}
+[data-pos=right]:hover::after,[data-pos=right]:focus-visible::after{left:calc(100% + 6px);top:50%;transform:translateY(-50%)}
+[data-pos=left]:hover::after,[data-pos=left]:focus-visible::after{right:calc(100% + 6px);top:50%;transform:translateY(-50%)}
+[data-pos=top]:hover::after,[data-pos=top]:focus-visible::after{bottom:calc(100% + 6px);left:0}
+.foot{display:flex;align-items:center;justify-content:space-between;margin-top:22px;color:var(--navmute);font:13px var(--ui)}.foot .ics{display:flex;gap:6px}
+#close{display:none;position:absolute;top:12px;right:12px}
 .tw{overflow-x:auto;margin:1.2em 0}table{border-collapse:collapse;font:15px/1.45 var(--ui);min-width:100%}th,td{border-bottom:1px solid var(--line);padding:8px 12px;text-align:left;vertical-align:top}th{border-bottom:2px solid var(--ink)}
-blockquote{margin:1.2em 0;padding:.1em 1.1em;border-left:4px solid var(--red);background:var(--code);border-radius:0 6px 6px 0}
-#pick{font:15px var(--ui);border:1px solid var(--line);border-left:4px solid var(--red);background:var(--code);border-radius:6px;padding:14px 16px;margin:1.4em 0}
-#pick label{font-weight:600;display:block;margin-bottom:6px}#pick select{font:inherit;padding:7px;border-radius:5px;border:1px solid var(--line);background:var(--bg);color:var(--ink);max-width:100%}#pick .n{color:var(--mute);margin:8px 0 0}
+blockquote{margin:1.2em 0;padding:.1em 1.1em;border-left:4px solid var(--acc);background:var(--code);}
+#pick{font:15px var(--ui);border:1px solid var(--line);border-left:4px solid var(--acc);background:var(--code);padding:14px 16px;margin:1.4em 0}
+#pick label{font-weight:600;display:block;margin-bottom:6px}#pick select{font:inherit;padding:7px;border:1px solid var(--line);background:var(--bg);color:var(--ink);max-width:100%}#pick .n{color:var(--mute);margin:8px 0 0}
 #pick pre{margin:10px 0 0}
-@media(max-width:860px){#side{transform:translateX(-100%);transition:transform .2s;z-index:5;width:min(88vw,320px)}#side.open{transform:none}
-#top{display:flex;position:sticky;top:env(safe-area-inset-top,0px);z-index:4;align-items:center;gap:12px;background:var(--nav);color:#fff;font:600 16px var(--ui);padding:10px 14px}#top button{background:none;border:1px solid #38577d;color:#fff;border-radius:6px;padding:5px 10px;font:inherit;cursor:pointer}
+@media(max-width:860px){#close{display:inline-flex}#side{transform:translateX(-100%);transition:transform .2s;z-index:5;width:min(88vw,320px)}#side.open{transform:none}
+#top{display:flex;position:sticky;top:env(safe-area-inset-top,0px);z-index:4;align-items:center;gap:12px;background:var(--nav);color:#f5f0e9;font:600 16px var(--ui);padding:10px 14px}
 main{margin:0;padding:20px 16px 90px}h1{font-size:30px}}
 </style>
 </head>
 <body>
-<div id="top"><button id="menu" aria-label="Open navigation" aria-expanded="false">Menu</button>Pylex docs</div>
+<div id="top"><button class="ib" id="menu" aria-label="Menu" aria-expanded="false" data-tip="Menu" data-pos="right"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18M3 12h18M3 18h18"/></svg></button>Pylex docs</div>
 <nav id="side" aria-label="Documentation">
-<a class="brand" href="#overview">Pylex</a><div class="tag">Python OCR and searchable PDFs</div>
+<button class="ib" id="close" aria-label="Close menu" data-tip="Close" data-pos="left"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 5l14 14M19 5L5 19"/></svg></button><a class="brand" href="#overview">Pylex</a><div class="tag">Python OCR and searchable PDFs</div>
 <div class="seg" role="group" aria-label="Show documentation for"><button data-k="all" aria-pressed="true">All</button><button data-k="sdk" aria-pressed="false">Python SDK</button><button data-k="cli" aria-pressed="false">CLI</button></div>
 <input id="q" type="search" placeholder="Filter pages and headings" aria-label="Filter navigation">
 {{NAV}}
-<p class="tag" style="margin-top:22px">Version {{VERSION}}<br><a href="https://github.com/voltvirtuoso/pylex" style="color:#8fa6c2">GitHub</a> <button id="th" style="background:none;border:0;color:#8fa6c2;cursor:pointer;font:inherit;text-decoration:underline">Toggle theme</button></p>
+<div class="foot"><span>Version {{VERSION}}</span><span class="ics"><a class="ib" href="https://github.com/voltvirtuoso/pylex" aria-label="GitHub repository" data-tip="GitHub repository" data-pos="top"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 17L17 7M8 7h9v9"/></svg></a><button class="ib" id="th" aria-label="Switch light or dark theme" data-tip="Light / dark" data-pos="top"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h16v16H4z"/><path d="M4 4h16v16z" fill="currentColor"/></svg></button></span></div>
 </nav>
 <main>
 {{CONTENT}}
@@ -61,7 +105,8 @@ main{margin:0;padding:20px 16px 90px}h1{font-size:30px}}
 <script>
 const $=(s,r=document)=>[...r.querySelectorAll(s)];
 // copy buttons
-$('pre').forEach(p=>{const w=document.createElement('div');w.className='pw';p.replaceWith(w);w.append(p);const b=document.createElement('button');b.className='cp';b.textContent='Copy';b.onclick=()=>{navigator.clipboard.writeText(p.innerText).then(()=>{b.textContent='Copied';setTimeout(()=>b.textContent='Copy',1400)})};w.append(b)});
+const IC={copy:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 8h12v12H8zM4 16V4h12"/></svg>',ok:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12l5 5L20 6"/></svg>'};
+$('pre').forEach(p=>{const w=document.createElement('div');w.className='pw';p.replaceWith(w);w.append(p);const b=document.createElement('button');b.className='cp';b.innerHTML=IC.copy;b.setAttribute('aria-label','Copy code');b.dataset.tip='Copy';b.dataset.pos='left';b.onclick=()=>{navigator.clipboard.writeText(p.innerText).then(()=>{b.innerHTML=IC.ok;b.dataset.tip='Copied';setTimeout(()=>{b.innerHTML=IC.copy;b.dataset.tip='Copy'},1400)})};w.append(b)});
 // SDK / CLI filter
 $('.seg button').forEach(b=>b.onclick=()=>{$('.seg button').forEach(x=>x.setAttribute('aria-pressed',x===b));const k=b.dataset.k;
 $('[data-kind]').forEach(e=>e.classList.toggle('hide',k!=='all'&&e.dataset.kind!=='all'&&e.dataset.kind!==k));if(k!=='all')location.hash=k==='sdk'?'python-api':'cli'});
@@ -72,11 +117,11 @@ const links=new Map($('#side a[href^="#"]').map(a=>[a.getAttribute('href').slice
 const io=new IntersectionObserver(es=>{es.forEach(e=>{if(!e.isIntersecting)return;const id=e.target.id,a=links.get(id);if(!a)return;$('#side a.on').forEach(x=>x.classList.remove('on'));$('#side .cur').forEach(x=>x.classList.remove('cur'));a.classList.add('on');(a.closest('.grp')||{classList:{add(){}}}).classList.add('cur')})},{rootMargin:'0px 0px -75% 0px'});
 $('section,main h2').forEach(e=>e.id&&io.observe(e));
 // mobile menu, theme
-const side=document.getElementById('side');document.getElementById('menu').onclick=e=>{const o=side.classList.toggle('open');e.target.setAttribute('aria-expanded',o)};
+const side=document.getElementById('side');const mb=document.getElementById('menu');mb.onclick=()=>{const o=side.classList.toggle('open');mb.setAttribute('aria-expanded',o)};document.getElementById('close').onclick=()=>{side.classList.remove('open');mb.setAttribute('aria-expanded',false)};
 side.addEventListener('click',e=>{if(e.target.matches('a'))side.classList.remove('open')});
-document.getElementById('th').onclick=()=>{const r=document.documentElement;const d=getComputedStyle(r).getPropertyValue('--bg').trim()==='#0f1620';r.dataset.theme=d?'light':'dark'};
+document.getElementById('th').onclick=()=>{const r=document.documentElement;const d=r.dataset.theme?r.dataset.theme==='dark':matchMedia('(prefers-color-scheme:dark)').matches;r.dataset.theme=d?'light':'dark'};
 // install picker
-const pk=document.getElementById('pick');if(pk){const C={cpu:['python -m pip install "pylex-ocr[cpu]"','Works on any CPU. The recommended default.'],intel:['python -m pip install "pylex-ocr[intel]"','OpenVINO. Benchmark it against [cpu]; it is not always faster.'],g13:['python -m pip install "pylex-ocr[gpu]"','nvidia-smi reports CUDA 13 or newer. CUDA and cuDNN libraries come from pip, so no CUDA toolkit is needed.'],g12:['python -m pip install "pylex-ocr[gpu-cu12]"','nvidia-smi reports CUDA 12.x. ONNX Runtime documents that its CUDA 12.8 builds need CUDA 12.8 or newer. No CUDA toolkit needed.'],auto:['python -m pip install pylex-ocr\npylex doctor --install','Not sure, or Apple, AMD or TPU hardware: Pylex detects your machine and runs the right command (the CPU profile on hardware it cannot use).']};
+const pk=document.getElementById('pick');if(pk){const C={cpu:['python -m pip install "pylex-ocr[cpu] @ git+https://github.com/voltvirtuoso/pylex.git"','Works on any CPU. The recommended default.'],intel:['python -m pip install "pylex-ocr[intel] @ git+https://github.com/voltvirtuoso/pylex.git"','OpenVINO. Benchmark it against [cpu]; it is not always faster.'],g13:['python -m pip install "pylex-ocr[gpu] @ git+https://github.com/voltvirtuoso/pylex.git"','nvidia-smi reports CUDA 13 or newer. CUDA and cuDNN libraries come from pip, so no CUDA toolkit is needed.'],g12:['python -m pip install "pylex-ocr[gpu-cu12] @ git+https://github.com/voltvirtuoso/pylex.git"','nvidia-smi reports CUDA 12.x. ONNX Runtime documents that its CUDA 12.8 builds need CUDA 12.8 or newer. No CUDA toolkit needed.'],auto:['python -m pip install "pylex-ocr @ git+https://github.com/voltvirtuoso/pylex.git"\npylex doctor --install','Not sure, or Apple, AMD or TPU hardware: Pylex detects your machine and runs the right command (the CPU profile on hardware it cannot use).']};
 const s=pk.querySelector('select'),c=pk.querySelector('code'),n=pk.querySelector('.n');const f=()=>{c.textContent=C[s.value][0];n.textContent=C[s.value][1]};s.onchange=f;f()}
 </script>
 </body>

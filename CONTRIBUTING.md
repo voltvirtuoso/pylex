@@ -21,3 +21,17 @@ ruff check .
 Keep pull requests focused and explain the user-visible behavior that changes. Add or update tests for behavior changes. Update the README, API documentation, CLI documentation, or changelog when the change affects users. Benchmark performance changes on a representative workload and document the hardware, model, runtime, and input characteristics.
 
 By contributing, you agree that your contribution is provided under the repository’s MIT License.
+
+## Releasing to PyPI (maintainers)
+
+The package is published as `pylex-ocr`. Before the first upload, check that `https://pypi.org/project/pylex-ocr/` does not already exist.
+
+```bash
+python -m pip install build twine
+python -m build
+twine check dist/*                      # both files must say PASSED
+twine upload --repository testpypi dist/*   # rehearse on TestPyPI first
+twine upload dist/*                     # then the real PyPI (needs a PyPI account and API token)
+```
+
+Bump `version` in `pyproject.toml` and `__version__` in `src/pylex/__init__.py` for every release; PyPI does not accept the same version twice.

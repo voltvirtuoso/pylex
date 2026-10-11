@@ -33,6 +33,7 @@ try:
 except ImportError:  # pragma: no cover
     Image = None
 
+from pylex import runtime
 from pylex.config import PDF_EXTS, Config
 from pylex.geometry import get_page_rotation, render_pdf_page_for_ocr
 from pylex.overlay import build_invisible_text_overlay
@@ -54,7 +55,7 @@ def check_dependencies() -> None:
         raise SystemExit(
             "Missing required package(s): "
             + ", ".join(missing)
-            + "\nReinstall the package: python -m pip install --upgrade pylex-ocr"
+            + f"\nReinstall the package: python -m pip install --upgrade \"{runtime.install_spec()}\""
         )
 
 

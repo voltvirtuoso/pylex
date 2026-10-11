@@ -6,6 +6,7 @@ authors:
   - family-names: Raza
     given-names: Haroon
     affiliation: "Pylex maintainers"
+abstract: "Pylex is a Python OCR library and command-line tool that makes scanned PDFs searchable and extracts text, confidence and position from images. It runs on CPU and NVIDIA GPU."
 repository-code: "https://github.com/voltvirtuoso/pylex"
 url: "https://github.com/voltvirtuoso/pylex"
 license: MIT
@@ -18,3 +19,6 @@ keywords:
   - scanned PDF
   - document text extraction
   - batch OCR
+  - PaddleOCR
+  - ONNX Runtime
+  - NVIDIA CUDA

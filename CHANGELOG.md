@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Discoverability: page metadata, social-preview image, JSON-LD, `sitemap.xml`, `llms.txt` and `llms-full.txt` for the docs site; README feature list and FAQ; extra package keywords and classifiers.
 - Hardware-matched install profiles: `[cpu]`, `[intel]`, `[gpu]` (CUDA 13) and `[gpu-cu12]`.
 - `pylex doctor` (and `pylex.doctor()`): detects CPU, NVIDIA GPU, TPU and installed runtimes, recommends an install, flags conflicting ONNX Runtime packages; `--verify-gpu` confirms CUDA really loads; `--install` runs the recommended commands.
 - `--device auto|cpu|gpu|gpu:N` and `Config(device=...)`; `--gpu` remains as a shortcut. Other Paddle accelerator types are passed through (untested).
@@ -18,6 +19,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `pylex.PylexSetupError` replaces `SystemExit` for backend, device and model-download problems, so applications that embed Pylex can catch it.
 
 ### Fixed
+- Install commands everywhere (README, docs, the docs hardware picker, `pylex doctor`, and error messages) now use the GitHub install, because the package is not on PyPI yet. A single switch, `PUBLISHED_ON_PYPI` in `pylex/runtime.py`, changes all of them to the short form after the first release.
+- `pylex doctor` no longer reports a deliberate Intel/OpenVINO install as needing changes.
+- Tests now check every command and Python snippet in the README and docs against the real CLI parser and Python syntax, and fail if a PyPI-only install command appears while the package is unpublished.
+- Install docs no longer imply the package is already on PyPI; they explain the local-build and GitHub routes to use until the first release.
+- Docs site: menu, close, copy, theme and GitHub controls are now square-edged icons with hover/focus labels (and screen-reader labels) instead of text buttons.
+- Docs site now uses a four-colour palette (deep red, sand, cream, near-black maroon) in both light and dark themes, with all text pairs at or above 4.5:1 contrast.
+- Docs site: the All / Python SDK / CLI selector no longer changes size when switched, and the page uses square corners throughout.
 - Install guidance now states only what is documented: ONNX Runtime's CUDA 13 / CUDA 12.8 requirements, and that TPUs are not in PaddleOCR's supported hardware list.
 - Unreachable model hosts produced a raw PaddleX traceback; there is now a clear message with the available workarounds.
 - An error message named a non-existent `--allow-runtime-fallback` flag.

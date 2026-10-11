@@ -1,0 +1,21 @@
+# Pylex
+
+> Pylex is a Python OCR library and command-line tool that makes scanned PDFs searchable and extracts text, confidence and position from images. It runs on CPU and NVIDIA GPU and installs from GitHub.
+
+## Docs
+
+- [Overview](https://github.com/voltvirtuoso/pylex/blob/main/docs/index.md): What Pylex is, when to use it, and when to choose something else.
+- [Installation](https://github.com/voltvirtuoso/pylex/blob/main/docs/installation.md): Install profiles for CPU, Intel, NVIDIA CUDA 12 and 13; GPU checks; TPU and other hardware status.
+- [Quickstart](https://github.com/voltvirtuoso/pylex/blob/main/docs/quickstart.md): Searchable PDF from the command line and from Python in five minutes.
+- [Python SDK reference](https://github.com/voltvirtuoso/pylex/blob/main/docs/python-api.md): Python SDK reference: extract_text, create_searchable_document, Config, callbacks, GPU use.
+- [CLI reference](https://github.com/voltvirtuoso/pylex/blob/main/docs/cli.md): Every command line option, defaults, exit codes, recipes, and pylex doctor.
+- [How it works](https://github.com/voltvirtuoso/pylex/blob/main/docs/how-it-works.md): Rendering, tiling, vertical-text retry, and how the invisible text layer is built.
+- [Accuracy and benchmarks](https://github.com/voltvirtuoso/pylex/blob/main/docs/accuracy-and-benchmarks.md): Choosing settings, recorded measurements, and a reproducible comparison harness.
+- [Limitations](https://github.com/voltvirtuoso/pylex/blob/main/docs/limitations.md): What Pylex does not do, script and font limits, hardware support.
+- [Troubleshooting](https://github.com/voltvirtuoso/pylex/blob/main/docs/troubleshooting.md): Fixes for install, GPU, model-download, and text-layer problems.
+
+## Optional
+
+- [Single-page docs site](https://voltvirtuoso.github.io/pylex/): All pages in one scrollable page.
+- [Repository](https://github.com/voltvirtuoso/pylex): Source code, issues, license (MIT).
+- [Full text of the docs](https://voltvirtuoso.github.io/pylex/llms-full.txt): Every page below in one plain-text file.

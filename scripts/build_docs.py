@@ -17,6 +17,25 @@ import markdown
 ROOT = Path(__file__).resolve().parent.parent
 DOCS = ROOT / "docs"
 OUT = DOCS / "index.html"
+SITE = "https://voltvirtuoso.github.io/pylex/"
+BLOB = "https://github.com/voltvirtuoso/pylex/blob/main/docs/"
+SUMMARY = (
+    "Pylex is a Python OCR library and command-line tool that makes scanned PDFs searchable and extracts "
+    "text, confidence and position from images. It runs on CPU and NVIDIA GPU and installs from GitHub."
+)
+# One-line description of each doc for llms.txt (kept next to the page list so they cannot drift apart).
+DESCRIPTIONS = {
+    "overview": "What Pylex is, when to use it, and when to choose something else.",
+    "installation": "Install profiles for CPU, Intel, NVIDIA CUDA 12 and 13; GPU checks; TPU and other hardware status.",
+    "quickstart": "Searchable PDF from the command line and from Python in five minutes.",
+    "python-api": "Python SDK reference: extract_text, create_searchable_document, Config, callbacks, GPU use.",
+    "cli": "Every command line option, defaults, exit codes, recipes, and pylex doctor.",
+    "how-it-works": "Rendering, tiling, vertical-text retry, and how the invisible text layer is built.",
+    "accuracy-and-benchmarks": "Choosing settings, recorded measurements, and a reproducible comparison harness.",
+    "limitations": "What Pylex does not do, script and font limits, hardware support.",
+    "troubleshooting": "Fixes for install, GPU, model-download, and text-layer problems.",
+    "changelog": "Release history.",
+}
 
 # (group, [(slug, source file, nav title, kind)]). kind: sdk / cli filter the two main docs.
 PAGES = [
@@ -91,15 +110,55 @@ def build() -> str:
     return page.replace("{{NAV}}", "\n".join(nav)).replace("{{CONTENT}}", "\n".join(sections)).replace("{{VERSION}}", version())
 
 
+def llms_txt() -> str:
+    """llms.txt: a short, link-based map of the docs for AI tools (https://llmstxt.org)."""
+    lines = ["# Pylex", "", f"> {SUMMARY}", "", "## Docs", ""]
+    for _group, items in PAGES:
+        for slug, src, title, _kind in items:
+            if slug == "changelog":
+                continue
+            url = BLOB + src.split("/")[-1]
+            lines.append(f"- [{title}]({url}): {DESCRIPTIONS[slug]}")
+    lines += ["", "## Optional", "",
+              f"- [Single-page docs site]({SITE}): All pages in one scrollable page.",
+              "- [Repository](https://github.com/voltvirtuoso/pylex): Source code, issues, license (MIT).",
+              f"- [Full text of the docs]({SITE}llms-full.txt): Every page below in one plain-text file.", ""]
+    return "\n".join(lines)
+
+
+def llms_full() -> str:
+    parts = [f"# Pylex documentation (full text)\n\n> {SUMMARY}\n"]
+    for _group, items in PAGES:
+        for slug, src, _title, _kind in items:
+            if slug != "changelog":
+                parts.append((DOCS / src).read_text(encoding="utf-8").strip() + "\n")
+    return "\n---\n\n".join(parts)
+
+
+def sitemap() -> str:
+    return (
+        '<?xml version="1.0" encoding="UTF-8"?>\n'
+        '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
+        f"  <url><loc>{SITE}</loc></url>\n"
+        "</urlset>\n"
+    )
+
+
+def outputs() -> dict[Path, str]:
+    return {OUT: build(), DOCS / "llms.txt": llms_txt(), DOCS / "llms-full.txt": llms_full(), DOCS / "sitemap.xml": sitemap()}
+
+
 def main() -> int:
-    new = build()
+    files = outputs()
     if "--check" in sys.argv:
-        if not OUT.exists() or OUT.read_text(encoding="utf-8") != new:
-            print("docs/index.html is out of date; run: python scripts/build_docs.py")
+        stale = [p.name for p, text in files.items() if not p.exists() or p.read_text(encoding="utf-8") != text]
+        if stale:
+            print(f"docs/{', docs/'.join(stale)} out of date; run: python scripts/build_docs.py")
             return 1
         return 0
-    OUT.write_text(new, encoding="utf-8")
-    print(f"wrote {OUT.relative_to(ROOT)} ({len(new) // 1024} KB)")
+    for path, text in files.items():
+        path.write_text(text, encoding="utf-8")
+        print(f"wrote {path.relative_to(ROOT)} ({max(len(text) // 1024, 1)} KB)")
     return 0
 
 

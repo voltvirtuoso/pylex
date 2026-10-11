@@ -3,7 +3,7 @@
 Five minutes from nothing to a searchable PDF, once from the command line and once from Python. Install first: [Installation](installation.md).
 
 ```bash
-python -m pip install "pylex-ocr[cpu]"     # or [gpu], [gpu-cu12], [intel]
+python -m pip install "pylex-ocr[cpu] @ git+https://github.com/voltvirtuoso/pylex.git"   # or [gpu], [gpu-cu12], [intel]
 ```
 
 ## Command line

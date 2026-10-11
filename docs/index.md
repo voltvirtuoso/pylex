@@ -17,12 +17,12 @@ Both share one install and one set of models.
 ## Sixty seconds
 
 ```bash
-python -m pip install pylex-ocr
+python -m pip install "pylex-ocr @ git+https://github.com/voltvirtuoso/pylex.git"
 pylex doctor --install        # detects your CPU or NVIDIA GPU and installs the right runtime
 pylex scan.pdf                # writes scan.ocr.pdf
 ```
 
-Hardware profiles (CPU, Intel, NVIDIA CUDA 12 and 13) and what is and is not supported are covered in [Installation](installation.md).
+Pylex is installed from GitHub for now (it is not on PyPI yet). Hardware profiles (CPU, Intel, NVIDIA CUDA 12 and 13) and what is and is not supported are covered in [Installation](installation.md).
 
 ## When to choose something else
 

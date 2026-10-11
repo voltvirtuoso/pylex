@@ -5,35 +5,52 @@
 [![License: MIT](https://img.shields.io/badge/license-MIT-yellow.svg)](LICENSE)
 [![Latest release](https://img.shields.io/github/v/release/voltvirtuoso/pylex)](https://github.com/voltvirtuoso/pylex/releases)
 
+**Documentation: https://voltvirtuoso.github.io/pylex/**
+
 **Pylex** is an open-source Python OCR package and command-line tool for extracting text from images and scanned PDFs. It creates searchable PDFs while preserving the original visible page, and it provides a reusable Python API for document-processing pipelines.
 
 Use Pylex when you need to add an invisible searchable text layer to a scanned PDF, OCR PNG/JPEG/TIFF/BMP/WebP/PDF files, process many files or folders from a CLI, recover small text in dense documents with overlapping tiles, or integrate OCR regions and confidence scores into a Python application.
 
 > Pylex is an OCR and searchable-PDF tool. It is not a handwriting-recognition system, a hosted OCR service, or a full document-layout reconstruction engine. Accuracy depends on image quality, language, model, and document layout.
 
+## What Pylex does
+
+- **Searchable PDFs.** Adds an invisible text layer to scanned PDFs and images; the visible page is not changed.
+- **Text extraction in Python.** `extract_text()` returns each line's text, confidence (0 to 1) and four-corner position.
+- **Dense and large pages.** Overlapping tiles keep small labels at full resolution, with a retry for vertical text.
+- **CPU and NVIDIA GPU.** One install profile per hardware (`[cpu]`, `[intel]`, `[gpu]`, `[gpu-cu12]`), and `pylex doctor` recommends one for your machine.
+- **Batch processing.** Folders, recursion, parallel workers, page ranges, exclude patterns, dry runs, and skip-existing.
+- **Languages and scripts.** PaddleOCR language codes through `--lang`; non-Latin searchable text through `--font`.
+- **Open source.** MIT licensed, with a Python SDK and a command line tool from one package.
+
 ## Quick start
 
 ### Install
 
-The distribution name is `pylex-ocr` (the name `pylex` on PyPI is an unrelated project). The command and import are `pylex`. Pick one profile for your hardware:
+Pylex is not on PyPI yet, so install it from this repository. You need Python 3.10 to 3.12 and `git`. The package name is `pylex-ocr` (the name `pylex` on PyPI is an unrelated project); the command and import are `pylex`. Pick one profile for your hardware:
 
 ```bash
-python -m pip install "pylex-ocr[cpu]"        # any CPU (recommended default)
-python -m pip install "pylex-ocr[gpu]"        # NVIDIA GPU, driver reporting CUDA 13+
-python -m pip install "pylex-ocr[gpu-cu12]"   # NVIDIA GPU, driver reporting CUDA 12.x
-python -m pip install "pylex-ocr[intel]"      # Intel CPU with OpenVINO
+# Any CPU (recommended default)
+python -m pip install "pylex-ocr[cpu] @ git+https://github.com/voltvirtuoso/pylex.git"
+
+# NVIDIA GPU, nvidia-smi reports CUDA 13 or newer
+python -m pip install "pylex-ocr[gpu] @ git+https://github.com/voltvirtuoso/pylex.git"
+
+# NVIDIA GPU, nvidia-smi reports CUDA 12.x
+python -m pip install "pylex-ocr[gpu-cu12] @ git+https://github.com/voltvirtuoso/pylex.git"
+
+# Intel CPU with OpenVINO
+python -m pip install "pylex-ocr[intel] @ git+https://github.com/voltvirtuoso/pylex.git"
 ```
 
-Not sure? Install the core and let Pylex choose:
+Not sure which one? Install the core and let Pylex choose:
 
 ```bash
-python -m pip install pylex-ocr
+python -m pip install "pylex-ocr @ git+https://github.com/voltvirtuoso/pylex.git"
 pylex doctor --install
 ```
 
-Profiles are mutually exclusive. Google TPUs are not supported. Details: [docs/installation.md](docs/installation.md). Before a PyPI release, use `pip install "pylex-ocr[cpu] @ git+https://github.com/voltvirtuoso/pylex.git"`.
-
-For development without an OCR backend: `python -m pip install -e ".[dev]"`.
+Profiles are mutually exclusive. Google TPUs are not supported. No `git`? Use `https://github.com/voltvirtuoso/pylex/archive/refs/heads/main.zip` instead of `git+https://github.com/voltvirtuoso/pylex.git`. Full guide: [docs/installation.md](docs/installation.md). For development: `python -m pip install -e ".[cpu,dev]"`.
 
 ### Create a searchable PDF
 
@@ -175,6 +192,43 @@ The main options include input/output paths, recursive folder processing, in-pla
 
 Benchmarks are machine- and document-dependent. When reporting performance, include the CPU/GPU, operating system, Python version, model, runtime, language, input resolution, and document type.
 
+## FAQ
+
+**What is Pylex?**
+A Python OCR library and command-line tool built on PaddleOCR models. It makes scanned PDFs searchable and extracts text, confidence and position from images.
+
+**How do I make a scanned PDF searchable from Python?**
+
+```python
+from pylex import Config, create_engine, create_searchable_document
+
+config = Config()
+engine = create_engine(config)
+result = create_searchable_document("scan.pdf", "scan-searchable.pdf", config=config, engine=engine)
+print(result.ok, result.lines_added)
+```
+
+**How do I install it?**
+Pylex is not on PyPI yet, so install it from GitHub with the profile for your hardware. See [Install](#install) above and [docs/installation.md](docs/installation.md).
+
+**Does Pylex support GPUs?**
+Yes, NVIDIA GPUs through the `[gpu]` (CUDA 13) and `[gpu-cu12]` (CUDA 12) profiles. Run `pylex doctor --verify-gpu` to confirm CUDA really loads, then use `--device gpu`.
+
+**Does Pylex support Google TPUs?**
+No. PaddleOCR's documented hardware list does not include TPUs and Pylex has no TPU code path. It runs on the host CPU of a TPU machine.
+
+**How is Pylex different from OCRmyPDF?**
+OCRmyPDF uses Tesseract by default, produces PDF/A, and can deskew and clean pages; it also has a plugin interface with PaddleOCR plugins. Pylex uses PaddleOCR models directly, with tiling for dense pages and a Python API that returns text regions. In this project's synthetic tests OCRmyPDF with Tesseract placed text correctly on rotated pages; Pylex has not been measured in the same harness yet. See [docs/accuracy-and-benchmarks.md](docs/accuracy-and-benchmarks.md).
+
+**Which languages does it support?**
+Those PaddleOCR supports, selected with `--lang`. The default invisible-text font covers Latin-1; use `--font` with a Unicode `.ttf` for other scripts.
+
+**Does it send my documents anywhere?**
+OCR runs on your machine. Models are downloaded on first use, and PaddleOCR checks model-host connectivity at startup unless `PADDLE_PDX_DISABLE_MODEL_SOURCE_CHECK=True` is set.
+
+**Which file types can it read?**
+PDF, PNG, JPEG, TIFF, BMP and WebP. The output is always a PDF.
+
 ## Limitations
 
 OCR can misrecognize text, especially when scans are low-resolution, skewed, noisy, handwritten, multilingual, or heavily occluded. Pylex preserves the visible document and adds recognized text; it does not guarantee semantic structure, table reconstruction, reading-order perfection, or perfect recognition. Always validate OCR output in workflows where errors have operational, legal, safety, or financial consequences.
@@ -193,7 +247,7 @@ Please open an issue with the Pylex version, Python version, operating system, i
 
 ## Project links
 
-- [Documentation site](docs/index.html) (open locally, or via GitHub Pages)
+- [Documentation site](https://voltvirtuoso.github.io/pylex/) (the same pages as `docs/`, in one scrollable page; the source is `docs/index.html`)
 - [Installation (CPU, GPU, TPU)](docs/installation.md)
 - [Quickstart](docs/quickstart.md)
 - [CLI reference](docs/cli.md)

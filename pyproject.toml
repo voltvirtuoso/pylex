@@ -31,6 +31,11 @@ keywords = [
     "openvino",
     "gpu",
     "cuda",
+    "ocr-cli",
+    "text-recognition",
+    "text-detection",
+    "image-to-text",
+    "engineering-drawings",
 ]
 classifiers = [
     "Development Status :: 4 - Beta",
@@ -45,7 +50,10 @@ classifiers = [
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
+    "Environment :: GPU :: NVIDIA CUDA",
     "Topic :: Multimedia :: Graphics :: Graphics Conversion",
+    "Topic :: Scientific/Engineering :: Image Recognition",
+    "Topic :: Text Processing :: Indexing",
     "Topic :: Scientific/Engineering :: Image Processing",
     "Topic :: Text Processing",
     "Topic :: Text Processing :: Linguistic",
@@ -103,7 +111,7 @@ Homepage = "https://github.com/voltvirtuoso/pylex"
 Repository = "https://github.com/voltvirtuoso/pylex"
 Issues = "https://github.com/voltvirtuoso/pylex/issues"
 Changelog = "https://github.com/voltvirtuoso/pylex/blob/main/CHANGELOG.md"
-Documentation = "https://github.com/voltvirtuoso/pylex/tree/main/docs"
+Documentation = "https://voltvirtuoso.github.io/pylex/"
 
 [project.scripts]
 # The user-facing executable remains `pylex`.

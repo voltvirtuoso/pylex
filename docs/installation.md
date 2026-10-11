@@ -1,43 +1,63 @@
 # Installation
 
-Pylex needs an OCR runtime that matches your hardware, and the right pip package is different for a laptop CPU, an Intel server, and an NVIDIA GPU. This page shows the one command for each, and how to let Pylex pick for you.
+Pylex needs an OCR runtime that matches your hardware, and the right packages are different for a laptop CPU, an Intel server, and an NVIDIA GPU. This page shows one command for each, and how to let Pylex pick for you.
 
-The distribution on PyPI is **`pylex-ocr`**. The Python module and the command are both **`pylex`**. (The name `pylex` on PyPI belongs to an unrelated project, so never run `pip install pylex`.)
+The package name is **`pylex-ocr`**. The Python module and the command are both **`pylex`**. The name `pylex` on PyPI belongs to an unrelated project, so never install a package called plain `pylex`.
 
-Requirements: Python 3.10, 3.11 or 3.12 on Linux, macOS or Windows.
+> **Pylex is installed from GitHub for now.** It has not been published to PyPI yet, so every command on this page installs from the GitHub repository. You need Python 3.10, 3.11 or 3.12, and `git`. Once the package is on PyPI, remove ` @ git+https://github.com/voltvirtuoso/pylex.git` from a command and the requirement becomes simply `pylex-ocr[cpu]`.
 
-## The fastest path: let Pylex choose
+## Pick one profile
+
+Choose exactly one. They are alternatives, not add-ons.
+
+| Your hardware | Profile | What it installs |
+|---|---|---|
+| Any CPU (recommended default) | `[cpu]` | PaddleOCR, PaddlePaddle, ONNX Runtime |
+| Intel CPU, to try OpenVINO | `[intel]` | PaddleOCR, PaddlePaddle, ONNX Runtime with the OpenVINO provider |
+| NVIDIA GPU, `nvidia-smi` reports CUDA 13 or newer | `[gpu]` | PaddleOCR, PaddlePaddle, `onnxruntime-gpu` for CUDA 13, plus CUDA and cuDNN libraries from pip |
+| NVIDIA GPU, `nvidia-smi` reports CUDA 12.x | `[gpu-cu12]` | The same, built for CUDA 12 |
+
+Then run the matching command. The command line tool and the Python SDK are the same package, so one install covers both.
+
+```bash
+# Any CPU
+python -m pip install "pylex-ocr[cpu] @ git+https://github.com/voltvirtuoso/pylex.git"
+
+# Intel CPU with OpenVINO
+python -m pip install "pylex-ocr[intel] @ git+https://github.com/voltvirtuoso/pylex.git"
+
+# NVIDIA GPU, CUDA 13 or newer
+python -m pip install "pylex-ocr[gpu] @ git+https://github.com/voltvirtuoso/pylex.git"
+
+# NVIDIA GPU, CUDA 12.x
+python -m pip install "pylex-ocr[gpu-cu12] @ git+https://github.com/voltvirtuoso/pylex.git"
+```
+
+Keep the quotes: without them most shells misread the brackets and spaces.
+
+**No `git` installed?** Replace `git+https://github.com/voltvirtuoso/pylex.git` with `https://github.com/voltvirtuoso/pylex/archive/refs/heads/main.zip`:
+
+```bash
+python -m pip install "pylex-ocr[cpu] @ https://github.com/voltvirtuoso/pylex/archive/refs/heads/main.zip"
+```
+
+> **Why one profile only?** `onnxruntime`, `onnxruntime-gpu` and `onnxruntime-openvino` all provide the same Python module name. Installing two of them corrupts each other's files. If you switch hardware profiles, remove the old one first (see [Switching profiles](#switching-profiles)).
+
+## Not sure? Let Pylex choose
 
 Install the light core package, then ask Pylex what your machine needs:
 
 ```bash
-python -m pip install pylex-ocr
+python -m pip install "pylex-ocr @ git+https://github.com/voltvirtuoso/pylex.git"
 pylex doctor            # inspects CPU, NVIDIA GPU, TPU and installed packages
 pylex doctor --install  # runs the recommended pip command (asks first)
 ```
 
-`pylex doctor` prints the hardware it found, the runtime packages already installed, and the exact command to run. From Python the same thing is available as `pylex.doctor()`, so a notebook or deployment script can check itself.
-
-If you run `pylex` before any OCR runtime is installed, the error message already contains the right command for your machine.
-
-## Pick one profile
-
-Choose exactly one of these. They are alternatives, not add-ons.
-
-| Your hardware | Install command | What it installs |
-|---|---|---|
-| Any CPU (recommended default) | `pip install "pylex-ocr[cpu]"` | PaddleOCR, PaddlePaddle, ONNX Runtime |
-| Intel CPU, to try OpenVINO | `pip install "pylex-ocr[intel]"` | PaddleOCR, PaddlePaddle, ONNX Runtime with the OpenVINO provider |
-| NVIDIA GPU, `nvidia-smi` reports CUDA 13 or newer | `pip install "pylex-ocr[gpu]"` | PaddleOCR, PaddlePaddle, `onnxruntime-gpu` for CUDA 13, plus CUDA and cuDNN libraries from pip |
-| NVIDIA GPU, `nvidia-smi` reports CUDA 12.x | `pip install "pylex-ocr[gpu-cu12]"` | The same, built for CUDA 12 |
-
-These work the same for the command line tool and the Python SDK, because they are the same package.
-
-> **Why one profile only?** `onnxruntime`, `onnxruntime-gpu` and `onnxruntime-openvino` all provide the same Python module name. Installing two of them corrupts each other's files. If you switch hardware profiles, remove the old one first (see [Switching profiles](#switching-profiles)).
+`pylex doctor` prints the hardware it found, the runtime packages already installed, and the exact command to run. From Python the same thing is available as `pylex.doctor()`. If you run `pylex` before any OCR runtime is installed, the error message already contains the right command for your machine.
 
 ### Which CUDA version do I have?
 
-Run `nvidia-smi` and read **CUDA Version** in the top-right corner. That is the newest CUDA your **driver** supports, which is what matters here. You do not need the CUDA toolkit installed: the `gpu` extras pull the CUDA and cuDNN runtime libraries from pip.
+Run `nvidia-smi` and read **CUDA Version** in the top-right corner. That is the newest CUDA your **driver** supports, which is what matters here. You do not need the CUDA toolkit installed: the `gpu` profiles pull the CUDA and cuDNN runtime libraries from pip.
 
 - **13.x or newer** → `[gpu]`. ONNX Runtime's documentation says its CUDA 13.0 builds require CUDA 13.0 or newer, and that PyPI's `onnxruntime-gpu` has been built with CUDA 13.0 by default since version 1.27.
 - **12.x** → `[gpu-cu12]`, which pins ONNX Runtime below 1.27. The same documentation says builds made with CUDA 12.8 require CUDA 12.8 or newer, so if the GPU check below fails on an older 12.x driver, update the driver.
@@ -51,23 +71,20 @@ Having `onnxruntime-gpu` installed does not prove CUDA loads. ONNX Runtime silen
 pylex doctor --verify-gpu
 ```
 
-It builds a tiny model and asks ONNX Runtime which provider it actually registered. `OK - CUDAExecutionProvider is active` means you are on the GPU. Then run:
+It builds a tiny model and asks ONNX Runtime which provider it actually registered. `OK - CUDAExecutionProvider is active` means you are on the GPU. Then run `pylex scan.pdf --device gpu -v`, or in Python `Config(device="gpu")`. See [Using a GPU](cli.md#using-a-gpu) and [GPU in the SDK](python-api.md#gpu-in-the-sdk).
+
+## Installing from a local build
+
+To install exactly what is in your checkout, without GitHub or PyPI:
 
 ```bash
-pylex scan.pdf --device gpu -v
+python -m pip install build
+python -m build                                   # creates dist/pylex_ocr-<version>-py3-none-any.whl
+python -m pip install "dist/pylex_ocr-2.0.0-py3-none-any.whl[cpu]"
+pylex doctor
 ```
 
-or, in Python, `Config(device="gpu")`. See [Using a GPU](cli.md#using-a-gpu) and [GPU in the SDK](python-api.md#gpu-in-the-sdk).
-
-## Installing from GitHub
-
-Before a release is on PyPI, or to try the latest code, install straight from the repository. Quote the whole thing:
-
-```bash
-python -m pip install "pylex-ocr[cpu] @ git+https://github.com/voltvirtuoso/pylex.git"
-```
-
-Replace `[cpu]` with `[gpu]`, `[gpu-cu12]` or `[intel]` as needed. For development:
+Use the file name that `build` printed, and swap `[cpu]` for another profile if needed. For development with tests:
 
 ```bash
 git clone https://github.com/voltvirtuoso/pylex.git
@@ -83,13 +100,7 @@ OCR runtimes are large and version-sensitive. Keep Pylex in its own environment:
 ```bash
 python -m venv .venv
 source .venv/bin/activate        # Windows: .venv\Scripts\activate
-python -m pip install "pylex-ocr[cpu]"
-```
-
-To use only the command line tool, `pipx` isolates it for you:
-
-```bash
-pipx install "pylex-ocr[cpu]"
+python -m pip install "pylex-ocr[cpu] @ git+https://github.com/voltvirtuoso/pylex.git"
 ```
 
 ## Paddle GPU build (alternative to ONNX Runtime)
@@ -98,12 +109,10 @@ Pylex can also run on the GPU through PaddlePaddle's own CUDA build, instead of 
 
 ```bash
 python -m pip install paddlepaddle-gpu==<version> -i <package-index-url-from-the-guide>
-python -m pip install pylex-ocr "paddleocr>=3.0,<4"
+python -m pip install "pylex-ocr @ git+https://github.com/voltvirtuoso/pylex.git" "paddleocr>=3.0,<4"
 ```
 
-Do **not** use the `[ocr]` or `[cpu]` extras here: they would also install the CPU `paddlepaddle`, which conflicts with `paddlepaddle-gpu`. Leave `onnxruntime` out as well, or add `--inference-engine paddle_dynamic` so Pylex does not pick it.
-
-This route needs a system CUDA setup that matches the wheel. For most people the `[gpu]` profile above is simpler.
+Do **not** use a profile here: `[cpu]`, `[intel]` and the `[gpu]` profiles also install the CPU `paddlepaddle`, which conflicts with `paddlepaddle-gpu`. Leave `onnxruntime` out as well, or add `--inference-engine paddle_dynamic` so Pylex does not pick it. This route needs a system CUDA setup that matches the wheel. For most people the `[gpu]` profile is simpler.
 
 ## Other accelerators
 
@@ -140,7 +149,7 @@ To move from one profile to another, remove every ONNX Runtime package and then 
 
 ```bash
 python -m pip uninstall -y onnxruntime onnxruntime-gpu onnxruntime-openvino
-python -m pip install "pylex-ocr[gpu]"
+python -m pip install "pylex-ocr[gpu] @ git+https://github.com/voltvirtuoso/pylex.git"
 ```
 
 `pylex doctor` detects when more than one is installed and prints this for you.
